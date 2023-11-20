@@ -1,0 +1,46 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    # - name: Build
+    #   run: go build -v ./...
+
+    - name: EMQ X MQTT Broker in GitHub Actions
+      # You may pin to the exact commit or the version.
+      # uses: Namoshek/emqx-github-action@be650af8aba4a0bf0c8545cde38ec743c3ab1f75
+      uses: Namoshek/emqx-github-action@v1
+      # with:
+        # EMQ X version to use
+        # version: # optional, default is latest
+        # Port mappings in a [host]:[container] format, delimited by spaces (example: "1883:1883 8883:8883")
+        # ports: # optional, default is 1883:1883
+        # Absolute path to a directory containing certificate files which can be referenced in the config (the folder is mounted under `/emqx-certs`)
+        # certificates: # optional, default is 
+        # Absolute path to the `emqx.conf` configuration file to use
+        # config: # optional, default is 
+        # The name of the spawned Docker container (can be used as hostname when accessed from other containers)
+        # container-name: # optional, default is emqx
+          
+    - name: Test
+      run: |
+        export MQTT_RRPC_TEST_URI=tcp://test:123456@emqx:1883
+        go test -v ./...
