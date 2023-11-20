@@ -41,6 +41,4 @@ jobs:
         # container-name: # optional, default is emqx
           
     - name: Test
-      run: |
-        export MQTT_RRPC_TEST_URI=tcp://test:123456@emqx:1883
-        go test -v ./...
+      run: go test -v ./...
