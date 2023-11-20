@@ -1,0 +1,28 @@
+---
+exclude: '(docs\/docs\.go|statik\.go|ent\.graphql|generated\.go|swagger\.json|mock/[\w_-]+\.go)$'
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-added-large-files
+        args: [ "--maxkb=200" ]
+      - id: check-merge-conflict
+      - id: check-json
+      - id: check-yaml
+      - id: check-xml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [ "--fix=lf" ]
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.4.0
+    hooks:
+      - id: go-fmt
+      # - id: go-vet
+      # - id: go-lint
+      - id: go-imports
+      # - id: go-cyclo # github.com/fzipp/gocyclo/cmd/gocyclo
+      #   args: [-over=15]
+      # - id: golangci-lint
+      # - id: go-critic # github.com/go-critic/go-critic/cmd/gocritic
+      - id: go-mod-tidy
