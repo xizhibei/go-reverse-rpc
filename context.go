@@ -59,7 +59,7 @@ func (c *BaseContext) Context() context.Context {
 }
 
 func (c *BaseContext) Reply(res *Response) bool {
-	if !c.replyed.CAS(false, true) {
+	if !c.replyed.CompareAndSwap(false, true) {
 		return false
 	}
 
