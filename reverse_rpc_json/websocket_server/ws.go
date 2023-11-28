@@ -105,7 +105,7 @@ func (s *Service) Connect() error {
 	return nil
 }
 
-func (s *Service) ConnectForever() {
+func (s *Service) EnsureConnected() {
 	if s.IsConnected() {
 		return
 	}
@@ -126,7 +126,7 @@ func (s *Service) ConnectForever() {
 func (s *Service) initReceive() {
 	go func() {
 		for !s.stop {
-			s.ConnectForever()
+			s.EnsureConnected()
 
 			var req Request
 			err := s.conn.ReadJSON(&req)

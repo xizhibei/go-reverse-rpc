@@ -79,7 +79,7 @@ func New(opts *MQTTOptions, validator *validator.Validate, options ...reverse_rp
 		validator: validator,
 	}
 
-	client.ConnectForever()
+	client.EnsureConnected()
 
 	client.OnConnect(func() {
 		err := s.initReceive()

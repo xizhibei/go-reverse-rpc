@@ -31,7 +31,7 @@ func New(uri, clientID, topicPrefix string, options ...mqtt.Option) (*Client, er
 
 	s := NewWithMQTTClient(topicPrefix, 0, client)
 
-	client.ConnectForever()
+	client.EnsureConnected()
 
 	return s, nil
 }

@@ -64,7 +64,7 @@ func NewWithMQTTClient(client *mqtt.Client, opts *MQTTOptions, options ...revers
 		log:       zap.S().With("module", "reverse_rpc.mqtt_pb"),
 	}
 
-	client.ConnectForever()
+	client.EnsureConnected()
 
 	client.OnConnect(func() {
 		err := s.initReceive()
@@ -113,7 +113,7 @@ func New(opts *MQTTOptions, options ...reverse_rpc.ServerOption) (*Service, erro
 		log:       zap.S().With("module", "reverse_rpc.mqtt_pb"),
 	}
 
-	client.ConnectForever()
+	client.EnsureConnected()
 
 	client.OnConnect(func() {
 		err := s.initReceive()

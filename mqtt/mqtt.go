@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	stdlog "log"
 	"net/url"
 	"os"
 	"sync"
@@ -72,12 +73,7 @@ func NewClient(uri, clientID string, options ...Option) (*Client, error) {
 		return nil, err
 	}
 
-	log := zap.S().With("module", "iot")
-
-	// mqtt.DEBUG = stdlog.New(os.Stderr, "DEBUG - ", stdlog.LstdFlags)
-	// mqtt.CRITICAL = stdlog.New(os.Stderr, "CRITICAL - ", stdlog.LstdFlags)
-	// mqtt.WARN = stdlog.New(os.Stderr, "WARN - ", stdlog.LstdFlags)
-	// mqtt.ERROR = stdlog.New(os.Stderr, "ERROR - ", stdlog.LstdFlags)
+	log := zap.S().With("module", "mqtt")
 
 	clonedServer := *server
 	clonedServer.User = nil
@@ -89,19 +85,15 @@ func NewClient(uri, clientID string, options ...Option) (*Client, error) {
 		onConnectLostCallbaks: make(map[int]OnConnectLostCallback),
 	}
 
-	tmp := os.TempDir() + "/mqtt"
-	_ = os.Mkdir(tmp, os.ModePerm)
-
 	mqttClientOptions := mqtt.NewClientOptions().
 		AddBroker(uri).
 		SetClientID(clientID).
 		SetKeepAlive(60 * time.Second).
 		SetTLSConfig(&tls.Config{}).
-		SetStore(mqtt.NewFileStore(tmp)).
 		SetDefaultPublishHandler(func(c mqtt.Client, m mqtt.Message) {
 			log.Infof("DefaultPublishHandler %s %s", m.Topic(), string(m.Payload()))
 		}).
-		SetAutoReconnect(true). //断网自动重连
+		SetAutoReconnect(true).
 		SetOnConnectHandler(func(mqtt.Client) {
 			log.Infof("Connected %s", client.printableURL)
 			for _, cb := range client.onConnectCallbaks {
@@ -129,6 +121,13 @@ func NewClient(uri, clientID string, options ...Option) (*Client, error) {
 		client.OnConnect(func() {
 			client.PublishBytes(clientOptions.onlineTopic, 1, true, []byte(clientOptions.onlinePayload))
 		})
+	}
+
+	if clientOptions.enableDebug {
+		mqtt.DEBUG = stdlog.New(os.Stderr, "DEBUG - ", stdlog.LstdFlags)
+		mqtt.CRITICAL = stdlog.New(os.Stderr, "CRITICAL - ", stdlog.LstdFlags)
+		mqtt.WARN = stdlog.New(os.Stderr, "WARN - ", stdlog.LstdFlags)
+		mqtt.ERROR = stdlog.New(os.Stderr, "ERROR - ", stdlog.LstdFlags)
 	}
 
 	return &client, nil
@@ -210,15 +209,15 @@ func (s *Client) Connect() error {
 	return nil
 }
 
-func (s *Client) ConnectForever() {
-	go s.ConnectWaitSuccess()
+func (s *Client) EnsureConnected() {
+	go s.ConnectAndWaitForSuccess()
 }
 
-// ConnectWaitSuccess 确保连接
-func (s *Client) ConnectWaitSuccess() {
+// ConnectAndWaitForSuccess ...
+func (s *Client) ConnectAndWaitForSuccess() {
 	if !s.IsConnected() {
 		for !s.stopRetryConnect {
-			if s.IsConnected() { // 已连接的情况下 ，不需要再次连接。
+			if s.IsConnected() {
 				s.log.Infof("mqtt is connected %s", s.printableURL)
 				return
 			}

@@ -13,11 +13,18 @@ import (
 type ClientOptions struct {
 	*mqtt.ClientOptions
 	enableStatus  bool
+	enableDebug   bool
 	onlineTopic   string
 	onlinePayload []byte
 }
 
 type Option func(o *ClientOptions)
+
+func WithDebug(debug bool) Option {
+	return func(o *ClientOptions) {
+		o.enableDebug = debug
+	}
+}
 
 func WithUserPass(user, pass string) Option {
 	return func(o *ClientOptions) {
