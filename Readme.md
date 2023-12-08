@@ -16,10 +16,12 @@ This project is currently under development, and the API may undergo breaking ch
 
 ## Features
 
-- Based on MQTT (or other long term connections, WebSocket is on the way.)
-- JSON or Protobuf encoding
+- Supports multiple communication protocols - currently implemented MQTT, with WebSocket protocol support under development
+- Allows encoding data in different formats - currently supports JSON and Protobuf
+- Provides monitoring metrics for system insights
+- Implements error handling mechanisms for reliability
 
-## Get start
+## Installation
 
 ```bash
 go get github.com/xizhibei/go-reverse-rpc
@@ -29,6 +31,10 @@ go get github.com/xizhibei/go-reverse-rpc
 
 #### Server create
 ```go
+import (
+    mqtt_pb_server "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_server"
+)
+
 service, err := mqtt_pb_server.New(&mqtt_pb_server.MQTTOptions{
     Uri:   "tcp://localhost",
     Qos:   0,
@@ -41,6 +47,10 @@ if err != nil {
 
 #### Client create
 ```go
+import (
+    mqtt_pb_client "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_client"
+)
+
 client, err := mqtt_pb_client.New(
     "tcp://localhost",
     "123456-client",
