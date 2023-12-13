@@ -1,4 +1,4 @@
-package reverse_rpc_pb
+package compressor
 
 import (
 	"bytes"
@@ -9,7 +9,15 @@ import (
 	"sync"
 
 	"github.com/andybalholm/brotli"
-	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
+)
+
+type ContentEncoding int
+
+const (
+	ContentEncodingGzip    ContentEncoding = 0
+	ContentEncodingDeflate ContentEncoding = 1
+	ContentEncodingBrotli  ContentEncoding = 2
+	ContentEncodingPlain   ContentEncoding = 3
 )
 
 var (
@@ -54,38 +62,38 @@ func NewCompressorManager() *CompressorManager {
 	}
 }
 
-func (c *CompressorManager) Compress(tp rrpcpb.ContentEncoding, data []byte) ([]byte, error) {
+func (c *CompressorManager) Compress(tp ContentEncoding, data []byte) ([]byte, error) {
 	if data == nil {
 		return nil, nil
 	}
 
 	switch tp {
-	case rrpcpb.ContentEncoding_GZIP:
+	case ContentEncodingGzip:
 		return c.GzipCompress(data)
-	case rrpcpb.ContentEncoding_DEFLATE:
+	case ContentEncodingDeflate:
 		return c.ZlibCompress(data)
-	case rrpcpb.ContentEncoding_BROTLI:
+	case ContentEncodingBrotli:
 		return c.BrotliCompress(data)
-	case rrpcpb.ContentEncoding_PLAIN:
+	case ContentEncodingPlain:
 		return data, nil
 	default:
 		return nil, ErrUnknownCompressor
 	}
 }
 
-func (c *CompressorManager) Uncompress(tp rrpcpb.ContentEncoding, data []byte) ([]byte, error) {
+func (c *CompressorManager) Uncompress(tp ContentEncoding, data []byte) ([]byte, error) {
 	if data == nil {
 		return nil, nil
 	}
 
 	switch tp {
-	case rrpcpb.ContentEncoding_GZIP:
+	case ContentEncodingGzip:
 		return c.GzipUncompress(data)
-	case rrpcpb.ContentEncoding_DEFLATE:
+	case ContentEncodingDeflate:
 		return c.ZlibUncompress(data)
-	case rrpcpb.ContentEncoding_BROTLI:
+	case ContentEncodingBrotli:
 		return c.BrotliUncompress(data)
-	case rrpcpb.ContentEncoding_PLAIN:
+	case ContentEncodingPlain:
 		return data, nil
 	default:
 		return nil, ErrUnknownCompressor

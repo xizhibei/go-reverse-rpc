@@ -1,29 +1,45 @@
 package reverse_rpc_pb
 
 import (
+	"github.com/xizhibei/go-reverse-rpc/compressor"
+	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
 	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
 	"google.golang.org/protobuf/proto"
 )
 
 type ServerCodec struct {
-	compressor *CompressorManager
+	compressor *compressor.CompressorManager
 }
 
 func NewServerCodec() *ServerCodec {
 	return &ServerCodec{
-		compressor: NewCompressorManager(),
+		compressor: compressor.NewCompressorManager(),
 	}
 }
 
-func NewServerCodecWithCompressor(compressor *CompressorManager) *ServerCodec {
+func NewServerCodecWithCompressor(compressor *compressor.CompressorManager) *ServerCodec {
 	return &ServerCodec{
 		compressor: compressor,
 	}
 }
 
+func convertEncoding(e pb.ContentEncoding) compressor.ContentEncoding {
+	switch e {
+	case pb.ContentEncoding_PLAIN:
+		return compressor.ContentEncodingPlain
+	case pb.ContentEncoding_GZIP:
+		return compressor.ContentEncodingGzip
+	case pb.ContentEncoding_DEFLATE:
+		return compressor.ContentEncodingDeflate
+	case pb.ContentEncoding_BROTLI:
+		return compressor.ContentEncodingBrotli
+	}
+	return compressor.ContentEncodingPlain
+}
+
 func (c *ServerCodec) Marshal(res *rrpcpb.Response) ([]byte, error) {
 	if res.Body != nil {
-		value, err := c.compressor.Compress(res.Encoding, res.Body.Value)
+		value, err := c.compressor.Compress(convertEncoding(res.Encoding), res.Body.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +59,7 @@ func (c *ServerCodec) Unmarshal(body []byte, req *rrpcpb.Request) error {
 		return err
 	}
 
-	value, err := c.compressor.Uncompress(req.Encoding, req.Body.Value)
+	value, err := c.compressor.Uncompress(convertEncoding(req.Encoding), req.Body.Value)
 	if err != nil {
 		return err
 	}
@@ -52,16 +68,16 @@ func (c *ServerCodec) Unmarshal(body []byte, req *rrpcpb.Request) error {
 }
 
 type ClientCodec struct {
-	compressor *CompressorManager
+	compressor *compressor.CompressorManager
 }
 
 func NewClientCodec() *ClientCodec {
 	return &ClientCodec{
-		compressor: NewCompressorManager(),
+		compressor: compressor.NewCompressorManager(),
 	}
 }
 
-func NewClientCodecWithCompressor(compressor *CompressorManager) *ClientCodec {
+func NewClientCodecWithCompressor(compressor *compressor.CompressorManager) *ClientCodec {
 	return &ClientCodec{
 		compressor: compressor,
 	}
@@ -69,7 +85,7 @@ func NewClientCodecWithCompressor(compressor *CompressorManager) *ClientCodec {
 
 func (c *ClientCodec) Marshal(req *rrpcpb.Request) ([]byte, error) {
 	if req.Body != nil {
-		value, err := c.compressor.Compress(req.Encoding, req.Body.Value)
+		value, err := c.compressor.Compress(convertEncoding(req.Encoding), req.Body.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +109,7 @@ func (c *ClientCodec) Unmarshal(body []byte, res *rrpcpb.Response) error {
 		return nil
 	}
 
-	value, err := c.compressor.Uncompress(res.Encoding, res.Body.Value)
+	value, err := c.compressor.Uncompress(convertEncoding(res.Encoding), res.Body.Value)
 	if err != nil {
 		return err
 	}
