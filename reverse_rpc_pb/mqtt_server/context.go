@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ErrRequestNotProto = errors.New("Request type is not proto message")
+	ErrRequestNotProto = errors.New("[RRPC] request type is not protobuf message")
 )
 
 type MQTTContext struct {
@@ -72,7 +72,7 @@ func (c *MQTTContext) Bind(request interface{}) error {
 	}
 	typeURL := reflect.TypeOf(m).String()
 	if typeURL != c.req.Body.TypeUrl {
-		return errors.Newf("Type %s is not found", typeURL)
+		return errors.Newf("[RRPC] type %s is not found", typeURL)
 	}
 
 	return proto.Unmarshal(c.req.Body.Value, m)

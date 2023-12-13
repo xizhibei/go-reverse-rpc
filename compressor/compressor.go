@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	ErrUnknownCompressor = errors.New("Uknown compressor")
+	ErrUnknownContentEncoding = errors.New("[RRPC] uknown content encoding")
 )
 
 type CompressorManager struct {
@@ -77,7 +77,7 @@ func (c *CompressorManager) Compress(tp ContentEncoding, data []byte) ([]byte, e
 	case ContentEncodingPlain:
 		return data, nil
 	default:
-		return nil, ErrUnknownCompressor
+		return nil, ErrUnknownContentEncoding
 	}
 }
 
@@ -96,7 +96,7 @@ func (c *CompressorManager) Uncompress(tp ContentEncoding, data []byte) ([]byte,
 	case ContentEncodingPlain:
 		return data, nil
 	default:
-		return nil, ErrUnknownCompressor
+		return nil, ErrUnknownContentEncoding
 	}
 }
 

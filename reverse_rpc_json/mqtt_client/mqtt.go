@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ErrClientIsNotReady = errors.New("Client is not reader")
+	ErrClientIsNotReady = errors.New("[RRPC] client is not reader")
 )
 
 type Client struct {

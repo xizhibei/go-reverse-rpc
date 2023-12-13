@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	ErrNoReply       = errors.New("empty reply")
-	ErrTooFraquently = errors.New("调用过于频繁，请稍后再试")
-	ErrTimeout       = errors.New("请求超时")
+	ErrNoReply       = errors.New("[RRPC] empty reply")
+	ErrTooFraquently = errors.New("[RRPC] too fraquently, try again later")
+	ErrTimeout       = errors.New("[RRPC] timeout")
 )
 
 type Server struct {

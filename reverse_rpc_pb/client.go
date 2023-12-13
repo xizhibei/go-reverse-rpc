@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	ErrInvalidRequestBody     = errors.New("invalid request body")
-	ErrMessageTypeNotMatch    = errors.New("message type not match")
-	ErrUnknownContentEncoding = errors.New("unknown content encoding")
+	ErrInvalidRequestBody     = errors.New("[RRPC] invalid request body")
+	ErrMessageTypeNotMatch    = errors.New("[RRPC] message type not match")
+	ErrUnknownContentEncoding = errors.New("[RRPC] unknown content encoding")
 )
 
 type RPCClientCodec struct {

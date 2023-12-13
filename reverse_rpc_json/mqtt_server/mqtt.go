@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	ErrRetailedMessage = errors.New("reverse RPC 不允许保留消息，请设置 retaind=false")
+	ErrRetailedMessage = errors.New("[RRPC] reatain message is not allowed, please set retaind=false")
 )
 
 type MQTTOptions struct {

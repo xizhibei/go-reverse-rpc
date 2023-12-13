@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	ErrUnknownContentEncoding = errors.New("unknown content encoding")
+	ErrUnknownContentEncoding = errors.New("[RRPC] unknown content encoding")
 )
 
 type MQTTOptions struct {

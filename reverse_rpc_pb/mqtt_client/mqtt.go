@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	ErrClientIsNotReady = errors.New("Client is not ready")
+	ErrClientIsNotReady = errors.New("[RRPC] client is not ready")
 )
 
 type Client struct {
