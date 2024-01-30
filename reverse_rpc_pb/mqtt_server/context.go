@@ -16,7 +16,6 @@ var (
 )
 
 type MQTTContext struct {
-	reverse_rpc.BaseContext
 	req *RequestData
 	svc *Service
 }
@@ -26,7 +25,7 @@ func NewMQTTContext(req *RequestData, svc *Service) *MQTTContext {
 		req: req,
 		svc: svc,
 	}
-	ctx.BaseContext.BaseReply = ctx.reply
+
 	return &ctx
 }
 
@@ -78,14 +77,15 @@ func (c *MQTTContext) Bind(request interface{}) error {
 	return proto.Unmarshal(c.req.Body.Value, m)
 }
 
-func (c *MQTTContext) reply(res *reverse_rpc.Response) {
+func (c *MQTTContext) Reply(res *reverse_rpc.Response) bool {
 	if res.Error != nil {
 		_ = c.svc.reply(c.req.MakeErrResponse(res.Status, res.Error))
-		return
+		return true
 	}
 	if result, ok := res.Result.(proto.Message); ok {
 		_ = c.svc.reply(c.req.MakeOKResponse(result))
 	} else {
 		_ = c.svc.reply(c.req.MakeOKResponse(&emptypb.Empty{}))
 	}
+	return true
 }

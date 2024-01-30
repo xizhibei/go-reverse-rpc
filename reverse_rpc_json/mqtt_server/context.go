@@ -9,7 +9,6 @@ import (
 )
 
 type MQTTContext struct {
-	reverse_rpc.BaseContext
 	req       *Request
 	service   *Service
 	validator *validator.Validate
@@ -21,7 +20,6 @@ func NewMQTTContext(req *Request, service *Service, validator *validator.Validat
 		service:   service,
 		validator: validator,
 	}
-	ctx.BaseContext.BaseReply = ctx.reply
 	return &ctx
 }
 
@@ -57,10 +55,11 @@ func (c *MQTTContext) Bind(request interface{}) error {
 	return nil
 }
 
-func (c *MQTTContext) reply(res *reverse_rpc.Response) {
+func (c *MQTTContext) Reply(res *reverse_rpc.Response) bool {
 	if res.Error != nil {
 		_ = c.service.reply(c.req.MakeErrResponse(res.Status, res.Error))
-		return
+		return true
 	}
 	_ = c.service.reply(c.req.MakeOKResponse(res.Result))
+	return true
 }

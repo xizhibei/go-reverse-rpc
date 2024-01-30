@@ -165,7 +165,7 @@ func (s *Server) Call(c Context) {
 		s.emitAfterResponse(evt)
 	}()
 
-	err := s.limiter.Wait(c.Context())
+	err := s.limiter.Wait(c.Ctx())
 	if err != nil {
 		c.ReplyError(408, ErrTimeout)
 		return

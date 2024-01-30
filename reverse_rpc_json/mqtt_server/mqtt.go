@@ -1,6 +1,7 @@
 package mqtt_json_server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -175,7 +176,8 @@ func (s *Service) initReceive() error {
 
 		// s.log.Infof("Request from topic %s, method %s", m.Topic, req.Method)
 
-		c := NewMQTTContext(&req, s, s.validator)
+		mqttCtx := NewMQTTContext(&req, s, s.validator)
+		c := reverse_rpc.NewRequestContext(context.Background(), mqttCtx)
 
 		s.Server.Call(c)
 	})

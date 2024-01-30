@@ -9,7 +9,6 @@ import (
 )
 
 type WSContext struct {
-	reverse_rpc.BaseContext
 	req     *Request
 	service *Service
 }
@@ -19,7 +18,6 @@ func NewWSContext(req *Request, service *Service) *WSContext {
 		req:     req,
 		service: service,
 	}
-	ctx.BaseContext.BaseReply = ctx.reply
 	return &ctx
 }
 
@@ -55,10 +53,11 @@ func (c *WSContext) Bind(request interface{}) error {
 	return nil
 }
 
-func (c *WSContext) reply(res *reverse_rpc.Response) {
+func (c *WSContext) Reply(res *reverse_rpc.Response) bool {
 	if res.Error != nil {
 		_ = c.service.reply(c.req.MakeErrResponse(res.Status, res.Error))
-		return
+		return true
 	}
 	_ = c.service.reply(c.req.MakeOKResponse(res.Result))
+	return true
 }

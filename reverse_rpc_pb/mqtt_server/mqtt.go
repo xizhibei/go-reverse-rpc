@@ -1,6 +1,7 @@
 package mqtt_pb_server
 
 import (
+	"context"
 	"net/url"
 	"reflect"
 	"strings"
@@ -207,7 +208,8 @@ func (s *Service) initReceive() error {
 
 		// s.log.Infof("==Request from pb  topic %s, method %s", m.Topic(), req.Method)
 
-		c := NewMQTTContext(&req, s)
+		mqttCtx := NewMQTTContext(&req, s)
+		c := reverse_rpc.NewRequestContext(context.Background(), mqttCtx)
 
 		go s.Server.Call(c)
 	})

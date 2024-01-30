@@ -1,6 +1,7 @@
 package websocket_json_server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -140,7 +141,8 @@ func (s *Service) initReceive() {
 
 			s.log.Infof("Request from method %s", req.Method)
 
-			c := NewWSContext(&req, s)
+			wsCtx := NewWSContext(&req, s)
+			c := reverse_rpc.NewRequestContext(context.Background(), wsCtx)
 
 			s.Server.Call(c)
 		}
