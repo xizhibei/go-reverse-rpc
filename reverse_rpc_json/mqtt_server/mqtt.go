@@ -18,9 +18,11 @@ import (
 )
 
 var (
+	// ErrRetailedMessage is an error indicating that retain message is not allowed.
 	ErrRetailedMessage = errors.New("[RRPC] reatain message is not allowed, please set retaind=false")
 )
 
+// MQTTOptions is the options for MQTT.
 type MQTTOptions struct {
 	Uri            string
 	User           string
@@ -35,6 +37,7 @@ type MQTTOptions struct {
 	OfflinePayload []byte
 }
 
+// Service represents a MQTT service.
 type Service struct {
 	*reverse_rpc.Server
 	iotClient *mqtt.Client
@@ -46,6 +49,10 @@ type Service struct {
 	qos   byte
 }
 
+// New creates a new MQTT service with the provided options.
+// It initializes an MQTT client with the given MQTT options and connects to the MQTT broker.
+// The function also sets up the necessary configurations for the reverse RPC server.
+// It returns a pointer to the created Service and an error if any.
 func New(opts *MQTTOptions, validator *validator.Validate, options ...reverse_rpc.ServerOption) (*Service, error) {
 	iotOptions := []mqtt.Option{
 		mqtt.WithUserPass(opts.User, opts.Pass),
@@ -91,20 +98,27 @@ func New(opts *MQTTOptions, validator *validator.Validate, options ...reverse_rp
 	return &s, nil
 }
 
+// Close closes the MQTT service by disconnecting the IoT client.
+// It returns an error if there was a problem disconnecting the client.
 func (s *Service) Close() error {
 	s.iotClient.Disconnect()
 	return nil
 }
 
+// Request represents a request message received by the service.
 type Request struct {
 	Topic string
 	reverse_rpc_json.Request
 }
 
+// ReplyTopic returns the topic for the response message corresponding to the request.
+// It replaces the word "request" with "response" in the original topic.
 func (r *Request) ReplyTopic() string {
 	return strings.ReplaceAll(r.Topic, "request", "response")
 }
 
+// GetResponse returns the response object for the request.
+// It creates a new Response object with the reply topic and sets the ID and Method fields.
 func (r *Request) GetResponse() *Response {
 	replyTopic := r.ReplyTopic()
 	return &Response{
@@ -116,6 +130,9 @@ func (r *Request) GetResponse() *Response {
 	}
 }
 
+// MakeOKResponse creates a successful response with status code 200 and the provided data.
+// It marshals the data to JSON format and sets it as the response data.
+// The response object is returned.
 func (r *Request) MakeOKResponse(x interface{}) *Response {
 	res := r.GetResponse()
 	res.Status = 200
@@ -125,6 +142,8 @@ func (r *Request) MakeOKResponse(x interface{}) *Response {
 	return res
 }
 
+// MakeErrResponse creates an error response with the specified status code and error message.
+// It returns a pointer to a Response object.
 func (r *Request) MakeErrResponse(status int, err error) *Response {
 	res := r.GetResponse()
 	res.Status = status
@@ -136,6 +155,7 @@ func (r *Request) MakeErrResponse(status int, err error) *Response {
 	return res
 }
 
+// Response represents a response message sent by the service.
 type Response struct {
 	Topic string
 	reverse_rpc_json.Response
@@ -184,6 +204,7 @@ func (s *Service) initReceive() error {
 	return token.Error()
 }
 
+// IsConnected returns a boolean value indicating whether the service is connected to the MQTT broker.
 func (s *Service) IsConnected() bool {
 	return s.iotClient.IsConnected()
 }

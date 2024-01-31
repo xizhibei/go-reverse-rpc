@@ -14,11 +14,18 @@ import (
 )
 
 var (
-	ErrInvalidRequestBody     = errors.New("[RRPC] invalid request body")
-	ErrMessageTypeNotMatch    = errors.New("[RRPC] message type not match")
+	// ErrInvalidRequestBody is an error indicating an invalid request body.
+	ErrInvalidRequestBody = errors.New("[RRPC] invalid request body")
+
+	// ErrMessageTypeNotMatch is an error indicating that the message type does not match.
+	ErrMessageTypeNotMatch = errors.New("[RRPC] message type not match")
+
+	// ErrUnknownContentEncoding is an error indicating an unknown content encoding.
 	ErrUnknownContentEncoding = errors.New("[RRPC] unknown content encoding")
 )
 
+// RPCClientCodec is a custom implementation of rpc.ClientCodec interface.
+// It handles encoding and decoding of requests and responses.
 type RPCClientCodec struct {
 	conn     io.ReadWriteCloser
 	encoding rrpcpb.ContentEncoding
@@ -33,6 +40,7 @@ type RPCClientCodec struct {
 	log   *zap.SugaredLogger
 }
 
+// NewRPCClientCodecWithConn creates a new instance of RPCClientCodec with the given connection and content encoding.
 func NewRPCClientCodecWithConn(conn io.ReadWriteCloser, encoding rrpcpb.ContentEncoding) *RPCClientCodec {
 	return &RPCClientCodec{
 		conn:     conn,
@@ -43,18 +51,24 @@ func NewRPCClientCodecWithConn(conn io.ReadWriteCloser, encoding rrpcpb.ContentE
 	}
 }
 
+// NewRPCClientCodec creates a new instance of RPCClientCodec with the given content encoding.
+// The connection is set to nil.
 func NewRPCClientCodec(encoding rrpcpb.ContentEncoding) rpc.ClientCodec {
 	return NewRPCClientCodecWithConn(nil, encoding)
 }
 
+// Reset resets the connection of the RPCClientCodec to the given connection.
 func (c *RPCClientCodec) Reset(conn io.ReadWriteCloser) {
 	c.conn = conn
 }
 
+// SetEncoding sets the content encoding of the RPCClientCodec to the given encoding.
 func (c *RPCClientCodec) SetEncoding(encoding rrpcpb.ContentEncoding) {
 	c.encoding = encoding
 }
 
+// WriteRequest writes the RPC request to the connection.
+// It encodes the request body using protobuf and the specified content encoding.
 func (c *RPCClientCodec) WriteRequest(r *rpc.Request, param interface{}) error {
 	c.mutex.Lock()
 	c.pending[r.Seq] = r.ServiceMethod
@@ -91,6 +105,8 @@ func (c *RPCClientCodec) WriteRequest(r *rpc.Request, param interface{}) error {
 	return nil
 }
 
+// ReadResponseHeader reads the RPC response header from the connection.
+// It decodes the response using the custom codec and updates the provided rpc.Response object.
 func (c *RPCClientCodec) ReadResponseHeader(r *rpc.Response) error {
 	c.response.Reset()
 
@@ -123,6 +139,8 @@ func (c *RPCClientCodec) ReadResponseHeader(r *rpc.Response) error {
 	return nil
 }
 
+// ReadResponseBody reads the RPC response body from the connection.
+// It decodes the response body using protobuf and updates the provided target object.
 func (c *RPCClientCodec) ReadResponseBody(x interface{}) error {
 	if x == nil {
 		// c.log.Warn("target is empty")
@@ -150,10 +168,13 @@ func (c *RPCClientCodec) ReadResponseBody(x interface{}) error {
 	return proto.Unmarshal(c.response.Body.Value, m)
 }
 
+// Close closes the connection of the RPCClientCodec.
 func (c *RPCClientCodec) Close() error {
 	return c.conn.Close()
 }
 
+// NewClient creates a new RPC client with the given connection.
+// It uses the RPCClientCodec with BROTLI content encoding.
 func NewClient(conn io.ReadWriteCloser) *rpc.Client {
 	return rpc.NewClientWithCodec(NewRPCClientCodecWithConn(conn, rrpcpb.ContentEncoding_BROTLI))
 }

@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Service ...
+// Service represents a websocket service.
 type Service struct {
 	*reverse_rpc.Server
 	log    *zap.SugaredLogger
@@ -26,7 +26,7 @@ type Service struct {
 	path string
 }
 
-// New ...
+// New creates a new Service instance with the provided URI and options.
 func New(uri string, options ...reverse_rpc.ServerOption) (*Service, error) {
 	parsedURI, err := url.Parse(uri)
 	if err != nil {
@@ -47,6 +47,9 @@ func New(uri string, options ...reverse_rpc.ServerOption) (*Service, error) {
 	return &s, nil
 }
 
+// Close closes the WebSocket connection and stops the service.
+// It sets the stop flag to true and then calls the Close method on the underlying connection.
+// Returns an error if there was a problem closing the connection.
 func (s *Service) Close() error {
 	s.stop = true
 	return s.conn.Close()
@@ -65,6 +68,8 @@ type Response struct {
 	Data   interface{} `json:"params"`
 }
 
+// GetResponse returns a new Response object based on the current Request object.
+// The new Response object has the same ID and Method as the current Request object.
 func (r *Request) GetResponse() *Response {
 	return &Response{
 		ID:     r.ID,
@@ -72,6 +77,9 @@ func (r *Request) GetResponse() *Response {
 	}
 }
 
+// MakeOKResponse creates a successful response with the given data.
+// It sets the status code to 200 and assigns the data to the response.
+// Returns the created response.
 func (r *Request) MakeOKResponse(data interface{}) *Response {
 	res := r.GetResponse()
 	res.Status = 200
@@ -79,6 +87,9 @@ func (r *Request) MakeOKResponse(data interface{}) *Response {
 	return res
 }
 
+// MakeErrResponse creates an error response with the specified status code and error message.
+// It sets the response status and data fields accordingly.
+// The error message is included in the "message" field of the response data.
 func (r *Request) MakeErrResponse(status int, err error) *Response {
 	res := r.GetResponse()
 	res.Status = status
@@ -92,6 +103,10 @@ func (s *Service) reply(res *Response) error {
 	return s.conn.WriteJSON(res)
 }
 
+// Connect establishes a WebSocket connection to the specified URI.
+// It uses the default Dialer from the "github.com/gorilla/websocket" package.
+// The connection is stored in the Service struct for future use.
+// Returns an error if the connection cannot be established.
 func (s *Service) Connect() error {
 	s.connMu.Lock()
 	defer s.connMu.Unlock()
@@ -106,6 +121,8 @@ func (s *Service) Connect() error {
 	return nil
 }
 
+// EnsureConnected checks if the service is connected and establishes a connection if not.
+// It runs in a separate goroutine and keeps trying to connect until successful or stopped.
 func (s *Service) EnsureConnected() {
 	if s.IsConnected() {
 		return
@@ -149,6 +166,7 @@ func (s *Service) initReceive() {
 	}()
 }
 
+// IsConnected returns a boolean value indicating whether the service is currently connected to a client.
 func (s *Service) IsConnected() bool {
 	s.connMu.Lock()
 	defer s.connMu.Unlock()

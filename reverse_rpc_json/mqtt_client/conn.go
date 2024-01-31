@@ -49,6 +49,10 @@ func newRPCConn(requestTopic, responseTopic string, c *mqtt.Client, qos byte) (i
 	return &conn, nil
 }
 
+// Read reads data from the connection into the provided byte slice.
+// It returns the number of bytes read and an error, if any.
+// If the connection is not ready, it waits until it becomes ready.
+// If the connection is closed, it returns 0 and io.EOF.
 func (c *rpcConn) Read(data []byte) (int, error) {
 	if c.ready {
 		return c.bytesReader.Read(data)
@@ -60,17 +64,27 @@ func (c *rpcConn) Read(data []byte) (int, error) {
 	return c.bytesReader.Read(data)
 }
 
+// Write writes the given data to the MQTT connection.
+// It logs the information about the data being sent, including the topic and length.
+// It then publishes the data to the request topic using the MQTT client.
+// Finally, it returns the length of the data written and a nil error.
 func (c *rpcConn) Write(data []byte) (int, error) {
 	c.log.Infof("Send data to %s len=%d", c.requestTopic, len(data))
 	_ = c.c.PublishBytes(c.requestTopic, c.qos, false, data)
 	return len(data), nil
 }
 
+// Close closes the RPC connection and unsubscribes from the response topic.
+// It returns an error if there was a problem unsubscribing from the topic.
 func (c *rpcConn) Close() error {
 	close(c.readyChan)
 	return c.c.Unsubscribe(c.responseTopic)
 }
 
+// Dial establishes a connection to the MQTT broker and returns an RPC client.
+// It takes the request topic, reply topic, MQTT client, and quality of service (QoS) as parameters.
+// The function creates a new RPC connection using the provided parameters and returns a reverse_rpc_json.Client.
+// If an error occurs during the connection establishment, it returns nil and the error.
 func Dial(reqTopic, replyTopic string, c *mqtt.Client, qos byte) (*rpc.Client, error) {
 	conn, err := newRPCConn(reqTopic, replyTopic, c, qos)
 	if err != nil {

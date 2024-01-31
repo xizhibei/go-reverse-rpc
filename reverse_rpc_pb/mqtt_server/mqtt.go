@@ -19,9 +19,11 @@ import (
 )
 
 var (
+	// ErrUnknownContentEncoding is an error indicating an unknown content encoding.
 	ErrUnknownContentEncoding = errors.New("[RRPC] unknown content encoding")
 )
 
+// MQTTOptions is the options for MQTT.
 type MQTTOptions struct {
 	Uri            string
 	User           string
@@ -37,6 +39,7 @@ type MQTTOptions struct {
 	KeepAlive      time.Duration
 }
 
+// Service represents a MQTT service.
 type Service struct {
 	*reverse_rpc.Server
 	iotClient *mqtt.Client
@@ -48,6 +51,8 @@ type Service struct {
 	qos   byte
 }
 
+// NewWithMQTTClient creates a new Service instance with the provided MQTT client and options.
+// It returns a pointer to the Service and an error, if any.
 func NewWithMQTTClient(client *mqtt.Client, opts *MQTTOptions, options ...reverse_rpc.ServerOption) (*Service, error) {
 	parsedURI, err := url.Parse(opts.Uri)
 	if err != nil {
@@ -77,6 +82,8 @@ func NewWithMQTTClient(client *mqtt.Client, opts *MQTTOptions, options ...revers
 
 }
 
+// New creates a new MQTT service with the given options.
+// It returns a pointer to the Service and an error, if any.
 func New(opts *MQTTOptions, options ...reverse_rpc.ServerOption) (*Service, error) {
 	iotOptions := []mqtt.Option{
 		mqtt.WithUserPass(opts.User, opts.Pass),
@@ -125,25 +132,32 @@ func New(opts *MQTTOptions, options ...reverse_rpc.ServerOption) (*Service, erro
 	return &s, nil
 }
 
+// IsConnected returns a boolean value indicating whether the service is connected to the IoT client.
 func (s *Service) IsConnected() bool {
 	return s.iotClient.IsConnected()
 }
 
+// Close closes the service by disconnecting the IoT client.
+// It returns an error if there was a problem disconnecting the client.
 func (s *Service) Close() error {
 	s.iotClient.Disconnect()
 	return nil
 }
 
+// RequestData represents a request received by the service.
 type RequestData struct {
 	Topic string
 	rrpcpb.Request
 }
 
+// ResponseData represents a response sent by the service.
 type ResponseData struct {
 	Topic string
 	rrpcpb.Response
 }
 
+// GetResponse returns the response data for the request.
+// It creates a new ResponseData object with the reply topic and the request's ID and encoding.
 func (r *RequestData) GetResponse() *ResponseData {
 	return &ResponseData{
 		Topic: r.GetReplyTopic(),
@@ -154,6 +168,10 @@ func (r *RequestData) GetResponse() *ResponseData {
 	}
 }
 
+// MakeOKResponse creates a successful response with the given data.
+// It marshals the data into bytes using protocol buffers and sets the response status to 200.
+// The data is stored in the response body as an Any message, with the type URL set to the type of the data.
+// If an error occurs during marshaling, it returns nil.
 func (r *RequestData) MakeOKResponse(data proto.Message) *ResponseData {
 	res := r.GetResponse()
 	res.Status = 200
@@ -169,6 +187,8 @@ func (r *RequestData) MakeOKResponse(data proto.Message) *ResponseData {
 	return res
 }
 
+// MakeErrResponse creates an error response with the specified status code and error message.
+// It sets the status code and error message in the response data and returns the modified response.
 func (r *RequestData) MakeErrResponse(status int, err error) *ResponseData {
 	res := r.GetResponse()
 	res.Status = int32(status)
@@ -176,6 +196,8 @@ func (r *RequestData) MakeErrResponse(status int, err error) *ResponseData {
 	return res
 }
 
+// GetReplyTopic returns the reply topic for the request.
+// It replaces the word "request" with "response" in the original topic.
 func (r *RequestData) GetReplyTopic() string {
 	return strings.Replace(r.Topic, "request", "response", 1)
 }
