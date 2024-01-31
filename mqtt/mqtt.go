@@ -293,7 +293,7 @@ func (s *Client) IsConnected() bool {
 // The function returns a mqtt.Token that can be used to track the status of the subscription.
 // If an error occurs during the subscription, it will be logged and returned as part of the token.
 func (s *Client) Subscribe(topic string, qos byte, onMsg MessageCallback) mqtt.Token {
-	// s.log.Infof("Subscribe topic=%s qos=%d", topic, qos)
+	s.log.Debugf("Subscribe topic=%s qos=%d", topic, qos)
 	callback := func(c mqtt.Client, m mqtt.Message) {
 		onMsg(s, m)
 	}
@@ -337,7 +337,7 @@ func (s *Client) Subscribe(topic string, qos byte, onMsg MessageCallback) mqtt.T
 //	  // Handle subscription error
 //	}
 func (s *Client) SubscribeMultiple(filters map[string]byte, onMsg MessageCallback) mqtt.Token {
-	// s.log.Infof("SubscribeMultiple topic=%s qos=%d", topic, qos)
+	s.log.Debugf("SubscribeMultiple topic=%v", filters)
 	callback := func(c mqtt.Client, m mqtt.Message) {
 		onMsg(s, m)
 	}
@@ -390,7 +390,7 @@ func (s *Client) UnsubscribeAll() error {
 // It removes the topic from the subscribeMap and sends an unsubscribe request to the MQTT broker.
 // If there is an error during the unsubscribe process, it returns the error; otherwise, it returns nil.
 func (s *Client) Unsubscribe(topic string) error {
-	// s.log.Infof("Unsubscribe topic=%s", topic)
+	s.log.Debugf("Unsubscribe topic=%s", topic)
 	s.subscribeMap.Delete(topic)
 	if token := s.client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
 		return token.Error()
@@ -432,7 +432,7 @@ func (s *Client) PublishWait(topic string, qos byte, payload interface{}) error 
 		return err
 	}
 
-	// s.log.Infof("Publish topic=%s payload=%s", topic, string(data))
+	s.log.Debugf("Publish topic=%s payload=%v", topic, payload)
 	if token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
@@ -449,7 +449,7 @@ func (s *Client) PublishWaitTimeout(topic string, qos byte, timeout time.Duratio
 		return err
 	}
 
-	// s.log.Infof("Publish topic=%s payload=%s", topic, string(data))
+	s.log.Debugf("Publish topic=%s payload=%v", topic, payload)
 	if token.WaitTimeout(timeout) && token.Error() != nil {
 		return token.Error()
 	}

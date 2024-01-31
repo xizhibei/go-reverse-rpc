@@ -194,7 +194,7 @@ func (s *Service) initReceive() error {
 			return
 		}
 
-		// s.log.Infof("Request from topic %s, method %s", m.Topic, req.Method)
+		s.log.Debugf("Request from topic %s, method %s", m.Topic, req.Method)
 
 		mqttCtx := NewMQTTContext(&req, s, s.validator)
 		c := reverse_rpc.NewRequestContext(context.Background(), mqttCtx)

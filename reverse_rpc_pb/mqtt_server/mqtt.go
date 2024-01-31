@@ -216,7 +216,7 @@ func (s *Service) reply(res *ResponseData) error {
 
 func (s *Service) initReceive() error {
 	token := s.iotClient.Subscribe(s.topic, s.qos, func(client *mqtt.Client, m mqtt.Message) {
-		// s.log.Infof("==Request from json pb topic %s, method %s", m.Topic(), "Subscribe")
+		s.log.Debugf("Request from json pb topic %s, method %s", m.Topic(), "Subscribe")
 		req := RequestData{
 			Topic: m.Topic(),
 		}
@@ -228,7 +228,7 @@ func (s *Service) initReceive() error {
 			return
 		}
 
-		// s.log.Infof("==Request from pb  topic %s, method %s", m.Topic(), req.Method)
+		s.log.Debugf("Request from pb  topic %s, method %s", m.Topic(), req.Method)
 
 		mqttCtx := NewMQTTContext(&req, s)
 		c := reverse_rpc.NewRequestContext(context.Background(), mqttCtx)

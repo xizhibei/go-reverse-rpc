@@ -137,7 +137,7 @@ func (s *Server) Register(method string, hdl *Handler) {
 	}
 
 	s.handlerMap[method] = hdl
-	// s.log.Infof("Method %s registered", method)
+	s.log.Debugf("Method %s registered", method)
 }
 
 // Call handles the RPC call by executing the specified method and processing the response.
