@@ -11,6 +11,7 @@ import (
 	"github.com/andybalholm/brotli"
 )
 
+// ContentEncoding represents the encoding type used for compressing content.
 type ContentEncoding int
 
 const (
@@ -20,10 +21,12 @@ const (
 	ContentEncodingPlain   ContentEncoding = 3
 )
 
+// ErrUnknownContentEncoding is an error indicating an unknown content encoding.
 var (
 	ErrUnknownContentEncoding = errors.New("[RRPC] uknown content encoding")
 )
 
+// CompressorManager is a manager for compressors.
 type CompressorManager struct {
 	byteReaderPool   sync.Pool
 	bufferPool       sync.Pool
@@ -32,6 +35,8 @@ type CompressorManager struct {
 	brotliWriterPool sync.Pool
 }
 
+// NewCompressorManager creates a new instance of CompressorManager.
+// CompressorManager manages the pools for byte readers and various compressors.
 func NewCompressorManager() *CompressorManager {
 	return &CompressorManager{
 		byteReaderPool: sync.Pool{
@@ -62,6 +67,11 @@ func NewCompressorManager() *CompressorManager {
 	}
 }
 
+// Compress compresses the given data using the specified content encoding.
+// It returns the compressed data and an error, if any.
+// If the data is nil, it returns nil, nil.
+// The supported content encodings are Gzip, Deflate, Brotli, and Plain.
+// If an unknown content encoding is provided, it returns nil and an error.
 func (c *CompressorManager) Compress(tp ContentEncoding, data []byte) ([]byte, error) {
 	if data == nil {
 		return nil, nil
@@ -81,18 +91,23 @@ func (c *CompressorManager) Compress(tp ContentEncoding, data []byte) ([]byte, e
 	}
 }
 
-func (c *CompressorManager) Uncompress(tp ContentEncoding, data []byte) ([]byte, error) {
+// Decompress Decompresses the given data using the specified content encoding.
+// It returns the Decompressed data and an error, if any.
+// The supported content encodings are Gzip, Deflate, Brotli, and Plain.
+// If the data is nil, it returns nil, nil.
+// If the content encoding is unknown, it returns nil and an ErrUnknownContentEncoding error.
+func (c *CompressorManager) Decompress(tp ContentEncoding, data []byte) ([]byte, error) {
 	if data == nil {
 		return nil, nil
 	}
 
 	switch tp {
 	case ContentEncodingGzip:
-		return c.GzipUncompress(data)
+		return c.GzipDecompress(data)
 	case ContentEncodingDeflate:
-		return c.ZlibUncompress(data)
+		return c.ZlibDecompress(data)
 	case ContentEncodingBrotli:
-		return c.BrotliUncompress(data)
+		return c.BrotliDecompress(data)
 	case ContentEncodingPlain:
 		return data, nil
 	default:
@@ -100,7 +115,10 @@ func (c *CompressorManager) Uncompress(tp ContentEncoding, data []byte) ([]byte,
 	}
 }
 
-func (c *CompressorManager) GzipUncompress(data []byte) ([]byte, error) {
+// GzipDecompress Decompresses the given data using Gzip compression algorithm.
+// It takes a byte slice as input and returns the Decompressed data as a byte slice.
+// If an error occurs during the Decompression process, it returns the error.
+func (c *CompressorManager) GzipDecompress(data []byte) ([]byte, error) {
 	byteReader := c.byteReaderPool.Get().(*bytes.Reader)
 	defer c.byteReaderPool.Put(byteReader)
 	byteReader.Reset(data)
@@ -114,6 +132,8 @@ func (c *CompressorManager) GzipUncompress(data []byte) ([]byte, error) {
 	return io.ReadAll(reader)
 }
 
+// GzipCompress compresses the given data using gzip compression algorithm.
+// It returns the compressed data as a byte slice and an error if any occurred.
 func (c *CompressorManager) GzipCompress(data []byte) ([]byte, error) {
 	gzipWritter := c.gzipWriterPool.Get().(*gzip.Writer)
 	defer c.gzipWriterPool.Put(gzipWritter)
@@ -135,7 +155,9 @@ func (c *CompressorManager) GzipCompress(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (c *CompressorManager) ZlibUncompress(data []byte) ([]byte, error) {
+// ZlibDecompress Decompresses the given data using the zlib compression algorithm.
+// It returns the Decompressed data and any error encountered during the Decompression process.
+func (c *CompressorManager) ZlibDecompress(data []byte) ([]byte, error) {
 	byteReader := c.byteReaderPool.Get().(*bytes.Reader)
 	defer c.byteReaderPool.Put(byteReader)
 	byteReader.Reset(data)
@@ -149,6 +171,9 @@ func (c *CompressorManager) ZlibUncompress(data []byte) ([]byte, error) {
 	return io.ReadAll(reader)
 }
 
+// ZlibCompress compresses the given data using the zlib compression algorithm.
+// It returns the compressed data as a byte slice.
+// If an error occurs during compression, it returns nil and the error.
 func (c *CompressorManager) ZlibCompress(data []byte) ([]byte, error) {
 	writter := c.zlibWriterPool.Get().(*zlib.Writer)
 	defer c.zlibWriterPool.Put(writter)
@@ -170,7 +195,10 @@ func (c *CompressorManager) ZlibCompress(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (c *CompressorManager) BrotliUncompress(data []byte) ([]byte, error) {
+// BrotliDecompress Decompresses the given data using Brotli compression algorithm.
+// It takes a byte slice as input and returns the Decompressed data as a byte slice.
+// If an error occurs during the Decompression process, it returns the error.
+func (c *CompressorManager) BrotliDecompress(data []byte) ([]byte, error) {
 	byteReader := c.byteReaderPool.Get().(*bytes.Reader)
 	defer c.byteReaderPool.Put(byteReader)
 	byteReader.Reset(data)
@@ -180,6 +208,9 @@ func (c *CompressorManager) BrotliUncompress(data []byte) ([]byte, error) {
 	return io.ReadAll(reader)
 }
 
+// BrotliCompress compresses the given data using the Brotli compression algorithm.
+// It returns the compressed data as a byte slice.
+// If an error occurs during compression, it returns nil and the error.
 func (c *CompressorManager) BrotliCompress(data []byte) ([]byte, error) {
 	writter := c.brotliWriterPool.Get().(*brotli.Writer)
 	defer c.brotliWriterPool.Put(writter)

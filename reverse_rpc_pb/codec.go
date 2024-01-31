@@ -59,7 +59,7 @@ func (c *ServerCodec) Unmarshal(body []byte, req *rrpcpb.Request) error {
 		return err
 	}
 
-	value, err := c.compressor.Uncompress(convertEncoding(req.Encoding), req.Body.Value)
+	value, err := c.compressor.Decompress(convertEncoding(req.Encoding), req.Body.Value)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (c *ClientCodec) Unmarshal(body []byte, res *rrpcpb.Response) error {
 		return nil
 	}
 
-	value, err := c.compressor.Uncompress(convertEncoding(res.Encoding), res.Body.Value)
+	value, err := c.compressor.Decompress(convertEncoding(res.Encoding), res.Body.Value)
 	if err != nil {
 		return err
 	}
