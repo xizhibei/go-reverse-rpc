@@ -53,25 +53,27 @@ func (suite *MQTTTestSuite) SetupSuite() {
 	suite.T().Logf("uri %s", suite.uri)
 	suite.T().Logf("topicPrefix %s", suite.topicPrefix)
 
-	service, err := mqtt_json_server.New(&mqtt_json_server.MQTTOptions{
-		Uri:   suite.uri,
-		Qos:   0,
-		Topic: path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
-	}, validator.New())
+	iotServer, err := mqtt.NewClient(suite.uri, clientID+"server")
 	if err != nil {
 		panic(err)
 	}
+
+	service := mqtt_json_server.New(
+		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
+		iotServer,
+		validator.New(),
+	)
 	suite.service = service
 
-	client, err := mqtt_json_client.New(
-		suite.uri,
-		clientID+"client",
-		suite.topicPrefix,
-		mqtt.WithStore(nil),
-	)
+	iotClient, err := mqtt.NewClient(suite.uri, clientID+"client")
 	if err != nil {
 		panic(err)
 	}
+
+	client := mqtt_json_client.New(
+		suite.topicPrefix,
+		iotClient,
+	)
 	suite.client = client
 
 	time.Sleep(500 * time.Millisecond)
@@ -99,7 +101,7 @@ func (suite *MQTTTestSuite) TestNormalCall() {
 			var req Req
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(400, err)
+				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
@@ -131,14 +133,14 @@ func (suite *MQTTTestSuite) TestErrCall() {
 			var req Req
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(400, err)
+				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
 			suite.Equal(req.A, reqParams.A)
 			suite.Equal(req.B, reqParams.B)
 
-			c.ReplyError(400, fmt.Errorf("response error"))
+			c.ReplyError(reverse_rpc.RPCStatusClientError, fmt.Errorf("response error"))
 		},
 		Timeout: 5 * time.Second,
 	})
@@ -160,7 +162,7 @@ func (suite *MQTTTestSuite) TestTimeoutCall() {
 			var req Req
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(400, err)
+				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
@@ -191,7 +193,7 @@ func (suite *MQTTTestSuite) TestPanicCall() {
 			var req Req
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(400, err)
+				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
+	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt"
 	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
 	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
@@ -27,39 +28,25 @@ type Client struct {
 	rpcClientCodecPool sync.Pool
 
 	topicPrefix string
-	qos         byte
 }
 
-// New creates a new MQTT client with the specified URI, client ID, topic prefix, and options.
-// It returns a pointer to the created Client and an error if any.
-func New(uri, clientID, topicPrefix string, options ...mqtt.Option) (*Client, error) {
-	client, err := mqtt.NewClient(uri, clientID, options...)
-	if err != nil {
-		return nil, err
-	}
-
-	s := NewWithMQTTClient(topicPrefix, 0, pb.ContentEncoding_BROTLI, client)
-
-	client.EnsureConnected()
-
-	return s, nil
-}
-
-// NewWithMQTTClient creates a new instance of the Client struct with the provided parameters.
+// New creates a new instance of the Client struct with the provided parameters.
 // It initializes the MQTT client, sets the topic prefix, quality of service (QoS), content encoding,
 // and initializes the RPC client codec pool.
 // The returned pointer to the Client struct can be used to interact with the MQTT client.
-func NewWithMQTTClient(topicPrefix string, qos byte, encoding pb.ContentEncoding, client *mqtt.Client) *Client {
+func New(topicPrefix string, encoding pb.ContentEncoding, client *mqtt.Client) *Client {
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
-		log:         zap.S().With("module", "reverse_rpc.mqtt"),
+		log:         zap.S().With("module", "rrpc.pb.mqtt.client"),
 		rpcClientCodecPool: sync.Pool{
 			New: func() interface{} {
 				return reverse_rpc_pb.NewRPCClientCodec(encoding)
 			},
 		},
 	}
+
+	client.EnsureConnected()
 
 	return &s
 }
@@ -101,7 +88,7 @@ func (s *Client) createRPCClient(deviceID string, encoding pb.ContentEncoding) (
 	id := uuid.NewString()
 	requestTopic := path.Join(s.topicPrefix, deviceID, "request", id)
 	responseTopic := path.Join(s.topicPrefix, deviceID, "response", id)
-	conn, err := NewConn(requestTopic, responseTopic, s.mqttClient, s.qos)
+	conn, err := NewConn(requestTopic, responseTopic, s.mqttClient, reverse_rpc.DefaultQoS)
 	if err != nil {
 		return nil, nil, err
 	}

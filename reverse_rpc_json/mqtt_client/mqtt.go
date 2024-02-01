@@ -7,6 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
+	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt"
 	"go.uber.org/zap"
 )
@@ -20,29 +21,17 @@ type Client struct {
 	log        *zap.SugaredLogger
 
 	topicPrefix string
-	qos         byte
 }
 
-func New(uri, clientID, topicPrefix string, options ...mqtt.Option) (*Client, error) {
-	client, err := mqtt.NewClient(uri, clientID, options...)
-	if err != nil {
-		return nil, err
+func New(topicPrefix string, client *mqtt.Client) *Client {
+	s := Client{
+		mqttClient:  client,
+		topicPrefix: topicPrefix,
+		log:         zap.S().With("module", "rrpc.pb.mqtt.client"),
 	}
-
-	s := NewWithMQTTClient(topicPrefix, 0, client)
 
 	client.EnsureConnected()
 
-	return s, nil
-}
-
-func NewWithMQTTClient(topicPrefix string, qos byte, client *mqtt.Client) *Client {
-	s := Client{
-		mqttClient:  client,
-		qos:         qos,
-		topicPrefix: topicPrefix,
-		log:         zap.S().With("module", "reverse_rpc.mqtt"),
-	}
 	return &s
 }
 
@@ -71,7 +60,7 @@ func (s *Client) createRPCClient(machineID string) (*rpc.Client, error) {
 	id := uuid.NewString()
 	requestTopic := path.Join(s.topicPrefix, machineID, "request", id)
 	responseTopic := path.Join(s.topicPrefix, machineID, "response", id)
-	client, err := Dial(requestTopic, responseTopic, s.mqttClient, s.qos)
+	client, err := Dial(requestTopic, responseTopic, s.mqttClient, reverse_rpc.DefaultQoS)
 	if err != nil {
 		return nil, err
 	}

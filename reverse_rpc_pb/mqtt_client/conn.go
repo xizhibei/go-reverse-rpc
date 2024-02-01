@@ -33,7 +33,7 @@ func NewConn(requestTopic, responseTopic string, c *mqtt.Client, qos byte) (io.R
 		responseTopic: responseTopic,
 		c:             c,
 		qos:           qos,
-		log:           zap.S().With("module", "reverse_rpc.mqtt.conn"),
+		log:           zap.S().With("module", "rrpc.pb.mqtt.client.conn"),
 	}
 
 	c.OnConnect(func() {

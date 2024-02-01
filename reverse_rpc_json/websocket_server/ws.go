@@ -39,7 +39,7 @@ func New(uri string, options ...reverse_rpc.ServerOption) (*Service, error) {
 		uri:    uri,
 		host:   parsedURI.Host,
 		path:   parsedURI.Path,
-		log:    zap.S().With("module", "reverse_rpc.ws"),
+		log:    zap.S().With("module", "rrpc.pb.ws.server"),
 	}
 
 	s.initReceive()
@@ -82,7 +82,7 @@ func (r *Request) GetResponse() *Response {
 // Returns the created response.
 func (r *Request) MakeOKResponse(data interface{}) *Response {
 	res := r.GetResponse()
-	res.Status = 200
+	res.Status = reverse_rpc.RPCStatusOK
 	res.Data = data
 	return res
 }

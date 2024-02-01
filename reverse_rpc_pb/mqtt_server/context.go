@@ -64,9 +64,11 @@ type EncodingGetter interface {
 
 // PrometheusLabels returns the Prometheus labels of the MQTTContext.
 func (c *MQTTContext) PrometheusLabels() prometheus.Labels {
+	r := c.svc.iotClient.GetMqttClient().OptionsReader()
+	uri := r.Servers()[0]
 	return prometheus.Labels{
 		"method": c.req.Method,
-		"host":   c.svc.host,
+		"host":   uri.Host,
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/errors"
+	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -132,7 +133,7 @@ func (c *RPCClientCodec) ReadResponseHeader(r *rpc.Response) error {
 	r.Error = c.response.ErrorMessage
 	r.Seq = c.response.Id
 
-	if c.response.Status != 200 {
+	if c.response.Status != reverse_rpc.RPCStatusOK {
 		c.log.Errorf("Request %d", c.response.Status)
 	}
 

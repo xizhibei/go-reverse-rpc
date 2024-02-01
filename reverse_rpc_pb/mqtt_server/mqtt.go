@@ -2,10 +2,8 @@ package mqtt_pb_server
 
 import (
 	"context"
-	"net/url"
 	"reflect"
 	"strings"
-	"time"
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt"
@@ -23,22 +21,6 @@ var (
 	ErrUnknownContentEncoding = errors.New("[RRPC] unknown content encoding")
 )
 
-// MQTTOptions is the options for MQTT.
-type MQTTOptions struct {
-	Uri            string
-	User           string
-	Pass           string
-	ClientID       string
-	Topic          string
-	Qos            byte
-	EnableStatus   bool
-	StatusTopic    string
-	OnlinePayload  []byte
-	OfflinePayload []byte
-	FileStore      string
-	KeepAlive      time.Duration
-}
-
 // Service represents a MQTT service.
 type Service struct {
 	*reverse_rpc.Server
@@ -46,28 +28,18 @@ type Service struct {
 	codec     *reverse_rpc_pb.ServerCodec
 	log       *zap.SugaredLogger
 
-	host  string
 	topic string
-	qos   byte
 }
 
-// NewWithMQTTClient creates a new Service instance with the provided MQTT client and options.
+// New creates a new Service instance with the provided MQTT client and options.
 // It returns a pointer to the Service and an error, if any.
-func NewWithMQTTClient(client *mqtt.Client, opts *MQTTOptions, options ...reverse_rpc.ServerOption) (*Service, error) {
-	parsedURI, err := url.Parse(opts.Uri)
-	if err != nil {
-		return nil, err
-	}
-	parsedURI.User = nil
-
+func New(topic string, client *mqtt.Client, options ...reverse_rpc.ServerOption) *Service {
 	s := Service{
 		Server:    reverse_rpc.NewServer(options...),
 		iotClient: client,
-		host:      parsedURI.String(),
-		topic:     opts.Topic,
-		qos:       opts.Qos,
+		topic:     topic,
 		codec:     reverse_rpc_pb.NewServerCodec(),
-		log:       zap.S().With("module", "reverse_rpc.mqtt_pb"),
+		log:       zap.S().With("module", "rrpc.pb.mqtt.server"),
 	}
 
 	client.EnsureConnected()
@@ -78,58 +50,7 @@ func NewWithMQTTClient(client *mqtt.Client, opts *MQTTOptions, options ...revers
 			s.log.Errorf("init receive %v", err)
 		}
 	})
-	return &s, nil
-
-}
-
-// New creates a new MQTT service with the given options.
-// It returns a pointer to the Service and an error, if any.
-func New(opts *MQTTOptions, options ...reverse_rpc.ServerOption) (*Service, error) {
-	iotOptions := []mqtt.Option{
-		mqtt.WithUserPass(opts.User, opts.Pass),
-		mqtt.WithFileStore(opts.FileStore),
-		mqtt.WithKeepAlive(opts.KeepAlive),
-	}
-	if opts.EnableStatus {
-		iotOptions = append(iotOptions, mqtt.WithStatus(
-			opts.StatusTopic, opts.OnlinePayload,
-			opts.StatusTopic, opts.OfflinePayload,
-		))
-	}
-
-	client, err := mqtt.NewClient(
-		opts.Uri, opts.ClientID,
-		iotOptions...,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	parsedURI, err := url.Parse(opts.Uri)
-	if err != nil {
-		return nil, err
-	}
-	parsedURI.User = nil
-
-	s := Service{
-		Server:    reverse_rpc.NewServer(options...),
-		iotClient: client,
-		host:      parsedURI.String(),
-		topic:     opts.Topic,
-		qos:       opts.Qos,
-		codec:     reverse_rpc_pb.NewServerCodec(),
-		log:       zap.S().With("module", "reverse_rpc.mqtt_pb"),
-	}
-
-	client.EnsureConnected()
-
-	client.OnConnect(func() {
-		err := s.initReceive()
-		if err != nil {
-			s.log.Errorf("init receive %v", err)
-		}
-	})
-	return &s, nil
+	return &s
 }
 
 // IsConnected returns a boolean value indicating whether the service is connected to the IoT client.
@@ -174,7 +95,7 @@ func (r *RequestData) GetResponse() *ResponseData {
 // If an error occurs during marshaling, it returns nil.
 func (r *RequestData) MakeOKResponse(data proto.Message) *ResponseData {
 	res := r.GetResponse()
-	res.Status = 200
+	res.Status = reverse_rpc.RPCStatusOK
 	d, err := proto.Marshal(data)
 	if err != nil {
 		return nil
@@ -203,19 +124,19 @@ func (r *RequestData) GetReplyTopic() string {
 }
 
 func (s *Service) reply(res *ResponseData) error {
-	if res.Status != 200 {
+	if res.Status != reverse_rpc.RPCStatusOK {
 		s.log.Errorf("ResponseData error %#v", res)
 	}
 	data, err := s.codec.Marshal(&res.Response)
 	if err != nil {
 		return err
 	}
-	_ = s.iotClient.PublishBytes(res.Topic, s.qos, false, data)
+	_ = s.iotClient.PublishBytes(res.Topic, reverse_rpc.DefaultQoS, false, data)
 	return nil
 }
 
 func (s *Service) initReceive() error {
-	token := s.iotClient.Subscribe(s.topic, s.qos, func(client *mqtt.Client, m mqtt.Message) {
+	token := s.iotClient.Subscribe(s.topic, reverse_rpc.DefaultQoS, func(client *mqtt.Client, m mqtt.Message) {
 		s.log.Debugf("Request from json pb topic %s, method %s", m.Topic(), "Subscribe")
 		req := RequestData{
 			Topic: m.Topic(),

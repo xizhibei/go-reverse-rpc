@@ -153,8 +153,8 @@ func NewClient(uri, clientID string, options ...Option) (*Client, error) {
 }
 
 // GetMqttClient returns the MQTT client associated with the Client instance.
-func (s *Client) GetMqttClient() *mqtt.Client {
-	return &s.client
+func (s *Client) GetMqttClient() mqtt.Client {
+	return s.client
 }
 
 // OnConnectOnce registers a callback function to be executed once the MQTT client is connected.

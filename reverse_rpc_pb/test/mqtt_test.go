@@ -9,6 +9,7 @@ import (
 	"time"
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	"github.com/xizhibei/go-reverse-rpc/mqtt"
 	mqtt_pb_client "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_client"
 	mqtt_pb_server "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_server"
 	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
@@ -53,20 +54,23 @@ func (suite *MQTTTestSuite) SetupSuite() {
 	suite.T().Logf("uri %s", suite.uri)
 	suite.T().Logf("topicPrefix %s", suite.topicPrefix)
 
-	service, err := mqtt_pb_server.New(&mqtt_pb_server.MQTTOptions{
-		Uri:   suite.uri,
-		Qos:   0,
-		Topic: path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
-	})
+	iotServer, err := mqtt.NewClient(suite.uri, clientID+"server")
 	if err != nil {
 		panic(err)
 	}
+
+	service := mqtt_pb_server.New(path.Join(suite.topicPrefix, suite.deviceId, "request/+"), iotServer)
 	suite.service = service
 
-	client, err := mqtt_pb_client.New(
-		suite.uri,
-		clientID+"client",
+	iotClient, err := mqtt.NewClient(suite.uri, clientID+"client")
+	if err != nil {
+		panic(err)
+	}
+
+	client := mqtt_pb_client.New(
 		suite.topicPrefix,
+		pb.ContentEncoding_GZIP,
+		iotClient,
 	)
 	if err != nil {
 		panic(err)
@@ -98,7 +102,7 @@ func (suite *MQTTTestSuite) TestNormalCall() {
 			var req testpb.TestRequestBody
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(400, err)
+				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
@@ -146,14 +150,14 @@ func (suite *MQTTTestSuite) TestErrCall() {
 			var req testpb.TestRequestBody
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(400, err)
+				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
 			suite.Equal(req.Id, reqParams.Id)
 			suite.Equal(req.Str, reqParams.Str)
 
-			c.ReplyError(400, fmt.Errorf("response error"))
+			c.ReplyError(reverse_rpc.RPCStatusClientError, fmt.Errorf("response error"))
 		},
 		Timeout: 5 * time.Second,
 	})
@@ -176,7 +180,7 @@ func (suite *MQTTTestSuite) TestTimeoutCall() {
 			var req testpb.TestRequestBody
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(400, err)
+				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
@@ -208,7 +212,7 @@ func (suite *MQTTTestSuite) TestPanicCall() {
 			var req testpb.TestRequestBody
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(400, err)
+				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 

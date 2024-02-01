@@ -153,7 +153,7 @@ func (c *RequestContext) Reply(res *Response) bool {
 // It returns true if the response was sent successfully, otherwise false.
 func (c *RequestContext) ReplyOK(data interface{}) bool {
 	return c.Reply(&Response{
-		Status: 200,
+		Status: RPCStatusOK,
 		Result: data,
 	})
 }

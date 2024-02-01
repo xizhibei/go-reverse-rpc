@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/rpc"
 	"sync"
+
+	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 )
 
 // Request represents a JSON-RPC request.
@@ -92,7 +94,7 @@ func (c *rpcClientCodec) ReadResponseHeader(r *rpc.Response) error {
 	if c.resp.Data == nil {
 		r.Error = "unspecified error"
 	}
-	if c.resp.Status != 200 {
+	if c.resp.Status != reverse_rpc.RPCStatusOK {
 		var data map[string]interface{}
 		err := json.Unmarshal(c.resp.Data, &data)
 		if err != nil {

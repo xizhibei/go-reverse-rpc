@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"strings"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
@@ -22,21 +20,6 @@ var (
 	ErrRetailedMessage = errors.New("[RRPC] reatain message is not allowed, please set retaind=false")
 )
 
-// MQTTOptions is the options for MQTT.
-type MQTTOptions struct {
-	Uri            string
-	User           string
-	Pass           string
-	ClientID       string
-	Topic          string
-	Qos            byte
-	KeepAlive      time.Duration
-	EnableStatus   bool
-	StatusTopic    string
-	OnlinePayload  []byte
-	OfflinePayload []byte
-}
-
 // Service represents a MQTT service.
 type Service struct {
 	*reverse_rpc.Server
@@ -44,7 +27,6 @@ type Service struct {
 	log       *zap.SugaredLogger
 	validator *validator.Validate
 
-	host  string
 	topic string
 	qos   byte
 }
@@ -53,37 +35,12 @@ type Service struct {
 // It initializes an MQTT client with the given MQTT options and connects to the MQTT broker.
 // The function also sets up the necessary configurations for the reverse RPC server.
 // It returns a pointer to the created Service and an error if any.
-func New(opts *MQTTOptions, validator *validator.Validate, options ...reverse_rpc.ServerOption) (*Service, error) {
-	iotOptions := []mqtt.Option{
-		mqtt.WithUserPass(opts.User, opts.Pass),
-	}
-	if opts.KeepAlive > 0 {
-		iotOptions = append(iotOptions, mqtt.WithKeepAlive(opts.KeepAlive))
-	}
-	if opts.EnableStatus {
-		iotOptions = append(iotOptions, mqtt.WithStatus(
-			opts.StatusTopic, opts.OnlinePayload,
-			opts.StatusTopic, opts.OfflinePayload,
-		))
-	}
-	client, err := mqtt.NewClient(opts.Uri, opts.ClientID, iotOptions...)
-	if err != nil {
-		return nil, err
-	}
-
-	parsedURI, err := url.Parse(opts.Uri)
-	if err != nil {
-		return nil, err
-	}
-	parsedURI.User = nil
-
+func New(topic string, client *mqtt.Client, validator *validator.Validate, options ...reverse_rpc.ServerOption) *Service {
 	s := Service{
 		Server:    reverse_rpc.NewServer(options...),
 		iotClient: client,
-		topic:     opts.Topic,
-		qos:       opts.Qos,
-		host:      parsedURI.String(),
-		log:       zap.S().With("module", "reverse_rpc.mqtt"),
+		topic:     topic,
+		log:       zap.S().With("module", "rrpc.pb.mqtt.server"),
 		validator: validator,
 	}
 
@@ -95,7 +52,7 @@ func New(opts *MQTTOptions, validator *validator.Validate, options ...reverse_rp
 			s.log.Errorf("init receive %v", err)
 		}
 	})
-	return &s, nil
+	return &s
 }
 
 // Close closes the MQTT service by disconnecting the IoT client.
@@ -135,7 +92,7 @@ func (r *Request) GetResponse() *Response {
 // The response object is returned.
 func (r *Request) MakeOKResponse(x interface{}) *Response {
 	res := r.GetResponse()
-	res.Status = 200
+	res.Status = reverse_rpc.RPCStatusOK
 	data, _ := json.Marshal(x)
 
 	res.Data = data

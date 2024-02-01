@@ -21,6 +21,10 @@ This project is currently under development, and the API may undergo breaking ch
 - Provides monitoring metrics for system insights
 - Implements error handling mechanisms for reliability
 
+## TODO
+
+- Open telemetry support
+
 ## Installation
 
 ```bash
@@ -35,14 +39,12 @@ import (
     mqtt_pb_server "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_server"
 )
 
-service, err := mqtt_pb_server.New(&mqtt_pb_server.MQTTOptions{
-    Uri:   "tcp://localhost",
-    Qos:   0,
-    Topic: path.Join("example", "123456", "request/+"),
-})
+mqttClient, err := mqtt.NewClient("tcp://localhost", "123456-server")
 if err != nil {
     panic(err)
 }
+
+server := mqtt_pb_server.New(path.Join("example", "123456", "request/+"), mqttClient)
 ```
 
 #### Client create
@@ -51,14 +53,16 @@ import (
     mqtt_pb_client "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_client"
 )
 
-client, err := mqtt_pb_client.New(
-    "tcp://localhost",
-    "123456-client",
-    "example",
-)
+mqttClient, err := mqtt.NewClient("tcp://localhost", "123456-client")
 if err != nil {
     panic(err)
 }
+
+client := mqtt_pb_client.New(
+    "example",
+    pb.ContentEncoding_GZIP,
+    mqttClient,
+)
 ```
 
 #### Register handler on server side
@@ -68,7 +72,7 @@ server.Register(method, &reverse_rpc.Handler{
         var req Req
         err := c.Bind(&req)
         if err != nil {
-            c.ReplyError(400, err)
+            c.ReplyError(reverse_rpc.RPCStatusClientError, err)
             return
         }
 

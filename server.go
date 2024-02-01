@@ -167,7 +167,7 @@ func (s *Server) Call(c Context) {
 
 	err := s.limiter.Wait(c.Ctx())
 	if err != nil {
-		c.ReplyError(408, ErrTimeout)
+		c.ReplyError(RPCStatusRequestTimeout, ErrTimeout)
 		return
 	}
 	// if !s.limiter.Allow() {
@@ -177,7 +177,7 @@ func (s *Server) Call(c Context) {
 
 	hdl, ok := s.handlerMap[c.Method()]
 	if !ok {
-		c.ReplyError(500, fmt.Errorf("Unhandled method: %s", c.Method()))
+		c.ReplyError(RPCStatusServerError, fmt.Errorf("Unhandled method: %s", c.Method()))
 		return
 	}
 
@@ -186,21 +186,21 @@ func (s *Server) Call(c Context) {
 			if i := recover(); i != nil {
 				err := fmt.Errorf("panic in method %s %v", c.Method(), i)
 				s.log.Desugar().WithOptions(zap.AddStacktrace(zapcore.ErrorLevel)).Sugar().Error(err)
-				c.ReplyError(500, err)
+				c.ReplyError(RPCStatusServerError, err)
 			}
 		}()
 
 		hdl.Method(c)
 
 		// If the send is successful, it means that the method did not reply with any message.
-		if c.ReplyError(500, ErrNoReply) {
+		if c.ReplyError(RPCStatusServerError, ErrNoReply) {
 			s.log.Warnf("Method %s no reply", c.Method())
 		}
 
 	}, hdl.Timeout)
 
 	if err != nil {
-		c.ReplyError(500, err)
+		c.ReplyError(RPCStatusServerError, err)
 	}
 }
 

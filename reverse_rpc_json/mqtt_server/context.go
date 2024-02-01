@@ -45,9 +45,11 @@ func (c *MQTTContext) Method() string {
 // PrometheusLabels returns the Prometheus labels for the MQTTContext.
 // It includes the method and host labels.
 func (c *MQTTContext) PrometheusLabels() prometheus.Labels {
+	r := c.service.iotClient.GetMqttClient().OptionsReader()
+	uri := r.Servers()[0]
 	return prometheus.Labels{
 		"method": c.req.Method,
-		"host":   c.service.host,
+		"host":   uri.Host,
 	}
 }
 
