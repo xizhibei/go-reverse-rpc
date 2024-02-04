@@ -6,7 +6,6 @@ import (
 	"net/rpc"
 
 	"github.com/xizhibei/go-reverse-rpc/mqtt"
-	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_json"
 	"go.uber.org/zap"
 )
 
@@ -90,5 +89,5 @@ func Dial(reqTopic, replyTopic string, c *mqtt.Client, qos byte) (*rpc.Client, e
 	if err != nil {
 		return nil, err
 	}
-	return reverse_rpc_json.NewClient(conn), nil
+	return NewClient(conn), nil
 }

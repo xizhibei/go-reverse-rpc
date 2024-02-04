@@ -1,4 +1,4 @@
-package reverse_rpc_pb
+package mqtt_pb_client
 
 import (
 	"io"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
 	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -37,7 +38,7 @@ type RPCClientCodec struct {
 	mutex   sync.Mutex
 	pending map[uint64]string
 
-	codec *ProtobufClientCodec
+	codec *reverse_rpc_pb.ProtobufClientCodec
 	log   *zap.SugaredLogger
 }
 
@@ -47,7 +48,7 @@ func NewRPCClientCodecWithConn(conn io.ReadWriteCloser, encoding rrpcpb.ContentE
 		conn:     conn,
 		encoding: encoding,
 		pending:  make(map[uint64]string),
-		codec:    NewProtobufClientCodec(),
+		codec:    reverse_rpc_pb.NewProtobufClientCodec(),
 		log:      zap.S().With("module", "reverse_rpc.client"),
 	}
 }

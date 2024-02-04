@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt"
-	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
 	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -41,7 +40,7 @@ func New(client *mqtt.Client, topicPrefix string, encoding pb.ContentEncoding) *
 		log:         zap.S().With("module", "rrpc.pb.mqtt.client"),
 		rpcClientCodecPool: sync.Pool{
 			New: func() interface{} {
-				return reverse_rpc_pb.NewRPCClientCodec(encoding)
+				return NewRPCClientCodec(encoding)
 			},
 		},
 	}
@@ -93,7 +92,7 @@ func (s *Client) createRPCClient(deviceID string, encoding pb.ContentEncoding) (
 		return nil, nil, err
 	}
 
-	codec := s.rpcClientCodecPool.Get().(*reverse_rpc_pb.RPCClientCodec)
+	codec := s.rpcClientCodecPool.Get().(*RPCClientCodec)
 	codec.Reset(conn)
 	codec.SetEncoding(encoding)
 

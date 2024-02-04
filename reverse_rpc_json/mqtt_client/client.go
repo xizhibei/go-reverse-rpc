@@ -1,4 +1,4 @@
-package reverse_rpc_json
+package mqtt_json_client
 
 import (
 	"encoding/json"
@@ -8,33 +8,16 @@ import (
 	"sync"
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_json"
 )
-
-// Request represents a JSON-RPC request.
-type Request struct {
-	ID       uint64            `json:"id"`
-	Method   string            `json:"method"`
-	Status   int               `json:"status"`
-	Metadata map[string]string `json:"metadata,omitempty"`
-	Params   json.RawMessage   `json:"params"`
-}
-
-// Response represents a JSON-RPC response.
-type Response struct {
-	ID       uint64            `json:"id"`
-	Method   string            `json:"method"`
-	Status   int               `json:"status"`
-	Metadata map[string]string `json:"metadata,omitempty"`
-	Data     json.RawMessage   `json:"data"`
-}
 
 type rpcClientCodec struct {
 	dec *json.Decoder
 	enc *json.Encoder
 	c   io.ReadWriteCloser
 
-	req  Request
-	resp Response
+	req  reverse_rpc_json.Request
+	resp reverse_rpc_json.Response
 
 	mutex   sync.Mutex
 	pending map[uint64]string
