@@ -24,6 +24,8 @@ This project is currently under development, and the API may undergo breaking ch
 ## TODO
 
 - Open telemetry support
+- WebSocket protocol support
+- AMQP protocol support
 
 ## Installation
 
