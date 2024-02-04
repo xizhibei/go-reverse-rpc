@@ -28,18 +28,18 @@ type Service struct {
 	codec     *reverse_rpc_pb.ServerCodec
 	log       *zap.SugaredLogger
 
-	topic string
+	subscribeTopic string
 }
 
 // New creates a new Service instance with the provided MQTT client and options.
 // It returns a pointer to the Service and an error, if any.
-func New(topic string, client *mqtt.Client, options ...reverse_rpc.ServerOption) *Service {
+func New(client *mqtt.Client, subscribeTopic string, options ...reverse_rpc.ServerOption) *Service {
 	s := Service{
-		Server:    reverse_rpc.NewServer(options...),
-		iotClient: client,
-		topic:     topic,
-		codec:     reverse_rpc_pb.NewServerCodec(),
-		log:       zap.S().With("module", "rrpc.pb.mqtt.server"),
+		Server:         reverse_rpc.NewServer(options...),
+		iotClient:      client,
+		subscribeTopic: subscribeTopic,
+		codec:          reverse_rpc_pb.NewServerCodec(),
+		log:            zap.S().With("module", "rrpc.pb.mqtt.server"),
 	}
 
 	client.EnsureConnected()
@@ -136,7 +136,7 @@ func (s *Service) reply(res *ResponseData) error {
 }
 
 func (s *Service) initReceive() error {
-	token := s.iotClient.Subscribe(s.topic, reverse_rpc.DefaultQoS, func(client *mqtt.Client, m mqtt.Message) {
+	token := s.iotClient.Subscribe(s.subscribeTopic, reverse_rpc.DefaultQoS, func(client *mqtt.Client, m mqtt.Message) {
 		s.log.Debugf("Request from json pb topic %s, method %s", m.Topic(), "Subscribe")
 		req := RequestData{
 			Topic: m.Topic(),

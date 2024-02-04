@@ -59,7 +59,10 @@ func (suite *MQTTTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	service := mqtt_pb_server.New(path.Join(suite.topicPrefix, suite.deviceId, "request/+"), iotServer)
+	service := mqtt_pb_server.New(
+		iotServer,
+		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
+	)
 	suite.service = service
 
 	iotClient, err := mqtt.NewClient(suite.uri, clientID+"client")
@@ -68,9 +71,9 @@ func (suite *MQTTTestSuite) SetupSuite() {
 	}
 
 	client := mqtt_pb_client.New(
+		iotClient,
 		suite.topicPrefix,
 		pb.ContentEncoding_GZIP,
-		iotClient,
 	)
 	if err != nil {
 		panic(err)

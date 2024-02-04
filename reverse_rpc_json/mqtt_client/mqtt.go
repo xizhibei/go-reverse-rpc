@@ -23,7 +23,7 @@ type Client struct {
 	topicPrefix string
 }
 
-func New(topicPrefix string, client *mqtt.Client) *Client {
+func New(client *mqtt.Client, topicPrefix string) *Client {
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,

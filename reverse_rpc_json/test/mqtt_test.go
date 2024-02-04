@@ -59,8 +59,8 @@ func (suite *MQTTTestSuite) SetupSuite() {
 	}
 
 	service := mqtt_json_server.New(
-		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
 		iotServer,
+		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
 		validator.New(),
 	)
 	suite.service = service
@@ -71,8 +71,8 @@ func (suite *MQTTTestSuite) SetupSuite() {
 	}
 
 	client := mqtt_json_client.New(
-		suite.topicPrefix,
 		iotClient,
+		suite.topicPrefix,
 	)
 	suite.client = client
 

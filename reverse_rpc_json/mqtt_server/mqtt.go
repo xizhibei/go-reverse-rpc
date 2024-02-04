@@ -27,21 +27,21 @@ type Service struct {
 	log       *zap.SugaredLogger
 	validator *validator.Validate
 
-	topic string
-	qos   byte
+	subscribeTopic string
+	qos            byte
 }
 
 // New creates a new MQTT service with the provided options.
 // It initializes an MQTT client with the given MQTT options and connects to the MQTT broker.
 // The function also sets up the necessary configurations for the reverse RPC server.
 // It returns a pointer to the created Service and an error if any.
-func New(topic string, client *mqtt.Client, validator *validator.Validate, options ...reverse_rpc.ServerOption) *Service {
+func New(client *mqtt.Client, subscribeTopic string, validator *validator.Validate, options ...reverse_rpc.ServerOption) *Service {
 	s := Service{
-		Server:    reverse_rpc.NewServer(options...),
-		iotClient: client,
-		topic:     topic,
-		log:       zap.S().With("module", "rrpc.pb.mqtt.server"),
-		validator: validator,
+		Server:         reverse_rpc.NewServer(options...),
+		iotClient:      client,
+		subscribeTopic: subscribeTopic,
+		log:            zap.S().With("module", "rrpc.pb.mqtt.server"),
+		validator:      validator,
 	}
 
 	client.EnsureConnected()
@@ -133,7 +133,7 @@ func (s *Service) reply(res *Response) error {
 }
 
 func (s *Service) initReceive() error {
-	token := s.iotClient.Subscribe(s.topic, s.qos, func(client *mqtt.Client, m mqtt.Message) {
+	token := s.iotClient.Subscribe(s.subscribeTopic, s.qos, func(client *mqtt.Client, m mqtt.Message) {
 		req := Request{
 			Topic: m.Topic(),
 		}

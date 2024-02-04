@@ -34,7 +34,7 @@ type Client struct {
 // It initializes the MQTT client, sets the topic prefix, quality of service (QoS), content encoding,
 // and initializes the RPC client codec pool.
 // The returned pointer to the Client struct can be used to interact with the MQTT client.
-func New(topicPrefix string, encoding pb.ContentEncoding, client *mqtt.Client) *Client {
+func New(client *mqtt.Client, topicPrefix string, encoding pb.ContentEncoding) *Client {
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
