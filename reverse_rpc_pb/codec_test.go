@@ -10,8 +10,8 @@ import (
 )
 
 func TestServerCodec_Marshal(t *testing.T) {
-	scodec := NewServerCodec()
-	ccodec := NewClientCodec()
+	scodec := NewProtobufServerCodec()
+	ccodec := NewProtobufClientCodec()
 
 	// Test decompression with non-nil body
 	res := &rrpcpb.Response{
@@ -43,8 +43,8 @@ func TestServerCodec_Marshal(t *testing.T) {
 }
 
 func TestClientCodec_Marshal(t *testing.T) {
-	scodec := NewServerCodec()
-	ccodec := NewClientCodec()
+	scodec := NewProtobufServerCodec()
+	ccodec := NewProtobufClientCodec()
 
 	// Test compression with non-nil body
 	req := &rrpcpb.Request{

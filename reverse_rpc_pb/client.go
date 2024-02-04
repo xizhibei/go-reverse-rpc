@@ -37,7 +37,7 @@ type RPCClientCodec struct {
 	mutex   sync.Mutex
 	pending map[uint64]string
 
-	codec *ClientCodec
+	codec *ProtobufClientCodec
 	log   *zap.SugaredLogger
 }
 
@@ -47,7 +47,7 @@ func NewRPCClientCodecWithConn(conn io.ReadWriteCloser, encoding rrpcpb.ContentE
 		conn:     conn,
 		encoding: encoding,
 		pending:  make(map[uint64]string),
-		codec:    NewClientCodec(),
+		codec:    NewProtobufClientCodec(),
 		log:      zap.S().With("module", "reverse_rpc.client"),
 	}
 }

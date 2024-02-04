@@ -7,21 +7,21 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// ServerCodec is a codec used by the server to marshal and unmarshal RPC messages.
-type ServerCodec struct {
+// ProtobufServerCodec is a codec used by the server to marshal and unmarshal RPC messages.
+type ProtobufServerCodec struct {
 	compressor *compressor.CompressorManager
 }
 
-// NewServerCodec creates a new instance of ServerCodec with a default CompressorManager.
-func NewServerCodec() *ServerCodec {
-	return &ServerCodec{
+// NewProtobufServerCodec creates a new instance of ServerCodec with a default CompressorManager.
+func NewProtobufServerCodec() *ProtobufServerCodec {
+	return &ProtobufServerCodec{
 		compressor: compressor.NewCompressorManager(),
 	}
 }
 
 // NewServerCodecWithCompressor creates a new instance of ServerCodec with the provided CompressorManager.
-func NewServerCodecWithCompressor(compressor *compressor.CompressorManager) *ServerCodec {
-	return &ServerCodec{
+func NewServerCodecWithCompressor(compressor *compressor.CompressorManager) *ProtobufServerCodec {
+	return &ProtobufServerCodec{
 		compressor: compressor,
 	}
 }
@@ -43,7 +43,7 @@ func convertEncoding(e pb.ContentEncoding) compressor.ContentEncoding {
 
 // Marshal marshals the rrpcpb.Response message into bytes.
 // It compresses the response body if it is not nil.
-func (c *ServerCodec) Marshal(res *rrpcpb.Response) ([]byte, error) {
+func (c *ProtobufServerCodec) Marshal(res *rrpcpb.Response) ([]byte, error) {
 	if res.Body != nil {
 		value, err := c.compressor.Compress(convertEncoding(res.Encoding), res.Body.Value)
 		if err != nil {
@@ -61,7 +61,7 @@ func (c *ServerCodec) Marshal(res *rrpcpb.Response) ([]byte, error) {
 
 // Unmarshal unmarshals the bytes into the rrpcpb.Request message.
 // It decompresses the request body if it is not nil.
-func (c *ServerCodec) Unmarshal(body []byte, req *rrpcpb.Request) error {
+func (c *ProtobufServerCodec) Unmarshal(body []byte, req *rrpcpb.Request) error {
 	err := proto.Unmarshal(body, req)
 	if err != nil {
 		return err
@@ -79,28 +79,28 @@ func (c *ServerCodec) Unmarshal(body []byte, req *rrpcpb.Request) error {
 	return nil
 }
 
-// ClientCodec is a codec used by the client to marshal and unmarshal RPC messages.
-type ClientCodec struct {
+// ProtobufClientCodec is a codec used by the client to marshal and unmarshal RPC messages.
+type ProtobufClientCodec struct {
 	compressor *compressor.CompressorManager
 }
 
-// NewClientCodec creates a new instance of ClientCodec with a default CompressorManager.
-func NewClientCodec() *ClientCodec {
-	return &ClientCodec{
+// NewProtobufClientCodec creates a new instance of ClientCodec with a default CompressorManager.
+func NewProtobufClientCodec() *ProtobufClientCodec {
+	return &ProtobufClientCodec{
 		compressor: compressor.NewCompressorManager(),
 	}
 }
 
 // NewClientCodecWithCompressor creates a new instance of ClientCodec with the provided CompressorManager.
-func NewClientCodecWithCompressor(compressor *compressor.CompressorManager) *ClientCodec {
-	return &ClientCodec{
+func NewClientCodecWithCompressor(compressor *compressor.CompressorManager) *ProtobufClientCodec {
+	return &ProtobufClientCodec{
 		compressor: compressor,
 	}
 }
 
 // Marshal marshals the rrpcpb.Request message into bytes.
 // It compresses the request body if it is not nil.
-func (c *ClientCodec) Marshal(req *rrpcpb.Request) ([]byte, error) {
+func (c *ProtobufClientCodec) Marshal(req *rrpcpb.Request) ([]byte, error) {
 	if req.Body != nil {
 		value, err := c.compressor.Compress(convertEncoding(req.Encoding), req.Body.Value)
 		if err != nil {
@@ -118,7 +118,7 @@ func (c *ClientCodec) Marshal(req *rrpcpb.Request) ([]byte, error) {
 
 // Unmarshal unmarshals the bytes into the rrpcpb.Response message.
 // It decompresses the response body if it is not nil.
-func (c *ClientCodec) Unmarshal(body []byte, res *rrpcpb.Response) error {
+func (c *ProtobufClientCodec) Unmarshal(body []byte, res *rrpcpb.Response) error {
 	err := proto.Unmarshal(body, res)
 	if err != nil {
 		return err

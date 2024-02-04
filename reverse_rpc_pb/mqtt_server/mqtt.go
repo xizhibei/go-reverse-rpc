@@ -25,7 +25,7 @@ var (
 type Service struct {
 	*reverse_rpc.Server
 	iotClient *mqtt.Client
-	codec     *reverse_rpc_pb.ServerCodec
+	codec     *reverse_rpc_pb.ProtobufServerCodec
 	log       *zap.SugaredLogger
 
 	subscribeTopic string
@@ -38,7 +38,7 @@ func New(client *mqtt.Client, subscribeTopic string, options ...reverse_rpc.Serv
 		Server:         reverse_rpc.NewServer(options...),
 		iotClient:      client,
 		subscribeTopic: subscribeTopic,
-		codec:          reverse_rpc_pb.NewServerCodec(),
+		codec:          reverse_rpc_pb.NewProtobufServerCodec(),
 		log:            zap.S().With("module", "rrpc.pb.mqtt.server"),
 	}
 
