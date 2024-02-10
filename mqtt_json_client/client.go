@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
-	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_json"
+	"github.com/xizhibei/go-reverse-rpc/json_encoding"
 )
 
 type rpcClientCodec struct {
@@ -16,8 +16,8 @@ type rpcClientCodec struct {
 	enc *json.Encoder
 	c   io.ReadWriteCloser
 
-	req  reverse_rpc_json.Request
-	resp reverse_rpc_json.Response
+	req  json_encoding.Request
+	resp json_encoding.Response
 
 	mutex   sync.Mutex
 	pending map[uint64]string

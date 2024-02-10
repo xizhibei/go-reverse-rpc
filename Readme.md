@@ -38,7 +38,7 @@ go get github.com/xizhibei/go-reverse-rpc@latest
 #### Server create
 ```go
 import (
-    mqtt_pb_server "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_server"
+    "github.com/xizhibei/go-reverse-rpc/mqtt_pb_server"
     "github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 )
 
@@ -56,7 +56,7 @@ server := mqtt_pb_server.New(
 #### Client create
 ```go
 import (
-    mqtt_pb_client "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_client"
+    "github.com/xizhibei/go-reverse-rpc/mqtt_pb_client"
     "github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 )
 

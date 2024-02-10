@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	"github.com/xizhibei/go-reverse-rpc/json_encoding"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
-	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_json"
 
 	"go.uber.org/zap"
 )
@@ -65,7 +65,7 @@ func (s *Service) Close() error {
 // Request represents a request message received by the service.
 type Request struct {
 	Topic string
-	reverse_rpc_json.Request
+	json_encoding.Request
 }
 
 // ReplyTopic returns the topic for the response message corresponding to the request.
@@ -80,7 +80,7 @@ func (r *Request) GetResponse() *Response {
 	replyTopic := r.ReplyTopic()
 	return &Response{
 		Topic: replyTopic,
-		Response: reverse_rpc_json.Response{
+		Response: json_encoding.Response{
 			ID:     r.ID,
 			Method: r.Method,
 		},
@@ -115,7 +115,7 @@ func (r *Request) MakeErrResponse(status int, err error) *Response {
 // Response represents a response message sent by the service.
 type Response struct {
 	Topic string
-	reverse_rpc_json.Response
+	json_encoding.Response
 }
 
 func (s *Service) reply(res *Response) error {

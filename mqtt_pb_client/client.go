@@ -8,7 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
-	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
+	"github.com/xizhibei/go-reverse-rpc/pb_encoding"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -29,32 +29,32 @@ var (
 // It handles encoding and decoding of requests and responses.
 type RPCClientCodec struct {
 	conn     io.ReadWriteCloser
-	encoding rrpcpb.ContentEncoding
+	encoding pb_encoding.ContentEncoding
 
-	request  rrpcpb.Request
-	response rrpcpb.Response
+	request  pb_encoding.Request
+	response pb_encoding.Response
 
 	mutex   sync.Mutex
 	pending map[uint64]string
 
-	codec *rrpcpb.ProtobufClientCodec
+	codec *pb_encoding.ProtobufClientCodec
 	log   *zap.SugaredLogger
 }
 
 // NewRPCClientCodecWithConn creates a new instance of RPCClientCodec with the given connection and content encoding.
-func NewRPCClientCodecWithConn(conn io.ReadWriteCloser, encoding rrpcpb.ContentEncoding) *RPCClientCodec {
+func NewRPCClientCodecWithConn(conn io.ReadWriteCloser, encoding pb_encoding.ContentEncoding) *RPCClientCodec {
 	return &RPCClientCodec{
 		conn:     conn,
 		encoding: encoding,
 		pending:  make(map[uint64]string),
-		codec:    rrpcpb.NewProtobufClientCodec(),
+		codec:    pb_encoding.NewProtobufClientCodec(),
 		log:      zap.S().With("module", "reverse_rpc.client"),
 	}
 }
 
 // NewRPCClientCodec creates a new instance of RPCClientCodec with the given content encoding.
 // The connection is set to nil.
-func NewRPCClientCodec(encoding rrpcpb.ContentEncoding) rpc.ClientCodec {
+func NewRPCClientCodec(encoding pb_encoding.ContentEncoding) rpc.ClientCodec {
 	return NewRPCClientCodecWithConn(nil, encoding)
 }
 
@@ -64,7 +64,7 @@ func (c *RPCClientCodec) Reset(conn io.ReadWriteCloser) {
 }
 
 // SetEncoding sets the content encoding of the RPCClientCodec to the given encoding.
-func (c *RPCClientCodec) SetEncoding(encoding rrpcpb.ContentEncoding) {
+func (c *RPCClientCodec) SetEncoding(encoding pb_encoding.ContentEncoding) {
 	c.encoding = encoding
 }
 
@@ -177,5 +177,5 @@ func (c *RPCClientCodec) Close() error {
 // NewClient creates a new RPC client with the given connection.
 // It uses the RPCClientCodec with BROTLI content encoding.
 func NewClient(conn io.ReadWriteCloser) *rpc.Client {
-	return rpc.NewClientWithCodec(NewRPCClientCodecWithConn(conn, rrpcpb.ContentEncoding_BROTLI))
+	return rpc.NewClientWithCodec(NewRPCClientCodecWithConn(conn, pb_encoding.ContentEncoding_BROTLI))
 }

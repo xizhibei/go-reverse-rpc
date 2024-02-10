@@ -1,4 +1,4 @@
-package reverse_rpc_json_test
+package mqtt_json_server_test
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
-	mqtt_json_client "github.com/xizhibei/go-reverse-rpc/reverse_rpc_json/mqtt_client"
-	mqtt_json_server "github.com/xizhibei/go-reverse-rpc/reverse_rpc_json/mqtt_server"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_json_client"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_json_server"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"

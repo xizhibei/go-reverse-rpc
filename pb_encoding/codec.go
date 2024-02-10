@@ -1,4 +1,4 @@
-package reverse_rpc_pb
+package pb_encoding
 
 import (
 	"github.com/xizhibei/go-reverse-rpc/compressor"

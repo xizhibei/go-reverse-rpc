@@ -1,4 +1,4 @@
-package reverse_rpc_pb_test
+package mqtt_pb_server_test
 
 import (
 	"context"
@@ -10,10 +10,10 @@ import (
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
-	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
-	mqtt_pb_client "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_client"
-	mqtt_pb_server "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_server"
-	testpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/test"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_pb_client"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_pb_server"
+	"github.com/xizhibei/go-reverse-rpc/pb_encoding"
+	testpb "github.com/xizhibei/go-reverse-rpc/pb_encoding/test"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -73,7 +73,7 @@ func (suite *MQTTTestSuite) SetupSuite() {
 	client := mqtt_pb_client.New(
 		iotClient,
 		suite.topicPrefix,
-		rrpcpb.ContentEncoding_GZIP,
+		pb_encoding.ContentEncoding_GZIP,
 	)
 	if err != nil {
 		panic(err)
@@ -123,11 +123,11 @@ func (suite *MQTTTestSuite) TestNormalCall() {
 		Timeout: 5 * time.Second,
 	})
 
-	encodings := []rrpcpb.ContentEncoding{
-		rrpcpb.ContentEncoding_BROTLI,
-		rrpcpb.ContentEncoding_DEFLATE,
-		rrpcpb.ContentEncoding_GZIP,
-		rrpcpb.ContentEncoding_PLAIN,
+	encodings := []pb_encoding.ContentEncoding{
+		pb_encoding.ContentEncoding_BROTLI,
+		pb_encoding.ContentEncoding_DEFLATE,
+		pb_encoding.ContentEncoding_GZIP,
+		pb_encoding.ContentEncoding_PLAIN,
 	}
 
 	for _, e := range encodings {

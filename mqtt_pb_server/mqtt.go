@@ -7,8 +7,7 @@ import (
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
-	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
-	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
+	"github.com/xizhibei/go-reverse-rpc/pb_encoding"
 
 	"github.com/cockroachdb/errors"
 	"go.uber.org/zap"
@@ -25,7 +24,7 @@ var (
 type Service struct {
 	*reverse_rpc.Server
 	iotClient *mqtt_adapter.MQTTClientAdapter
-	codec     *reverse_rpc_pb.ProtobufServerCodec
+	codec     *pb_encoding.ProtobufServerCodec
 	log       *zap.SugaredLogger
 
 	subscribeTopic string
@@ -38,7 +37,7 @@ func New(client *mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options 
 		Server:         reverse_rpc.NewServer(options...),
 		iotClient:      client,
 		subscribeTopic: subscribeTopic,
-		codec:          reverse_rpc_pb.NewProtobufServerCodec(),
+		codec:          pb_encoding.NewProtobufServerCodec(),
 		log:            zap.S().With("module", "rrpc.pb.mqtt.server"),
 	}
 
@@ -68,13 +67,13 @@ func (s *Service) Close() error {
 // RequestData represents a request received by the service.
 type RequestData struct {
 	Topic string
-	rrpcpb.Request
+	pb_encoding.Request
 }
 
 // ResponseData represents a response sent by the service.
 type ResponseData struct {
 	Topic string
-	rrpcpb.Response
+	pb_encoding.Response
 }
 
 // GetResponse returns the response data for the request.
@@ -82,7 +81,7 @@ type ResponseData struct {
 func (r *RequestData) GetResponse() *ResponseData {
 	return &ResponseData{
 		Topic: r.GetReplyTopic(),
-		Response: rrpcpb.Response{
+		Response: pb_encoding.Response{
 			Id:       r.Id,
 			Encoding: r.Encoding,
 		},

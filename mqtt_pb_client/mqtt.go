@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
-	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
+	"github.com/xizhibei/go-reverse-rpc/pb_encoding"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
@@ -33,7 +33,7 @@ type Client struct {
 // It initializes the MQTT client, sets the topic prefix, quality of service (QoS), content encoding,
 // and initializes the RPC client codec pool.
 // The returned pointer to the Client struct can be used to interact with the MQTT client.
-func New(client *mqtt_adapter.MQTTClientAdapter, topicPrefix string, encoding rrpcpb.ContentEncoding) *Client {
+func New(client *mqtt_adapter.MQTTClientAdapter, topicPrefix string, encoding pb_encoding.ContentEncoding) *Client {
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
@@ -83,7 +83,7 @@ func (s *Client) Subscribe(topic string, qos byte, cb mqtt_adapter.MessageCallba
 	s.mqttClient.Subscribe(topic, qos, cb)
 }
 
-func (s *Client) createRPCClient(deviceID string, encoding rrpcpb.ContentEncoding) (*rpc.Client, func(), error) {
+func (s *Client) createRPCClient(deviceID string, encoding pb_encoding.ContentEncoding) (*rpc.Client, func(), error) {
 	id := uuid.NewString()
 	requestTopic := path.Join(s.topicPrefix, deviceID, "request", id)
 	responseTopic := path.Join(s.topicPrefix, deviceID, "response", id)
@@ -105,7 +105,7 @@ func (s *Client) createRPCClient(deviceID string, encoding rrpcpb.ContentEncodin
 }
 
 type callOpt struct {
-	encoding rrpcpb.ContentEncoding
+	encoding pb_encoding.ContentEncoding
 }
 
 // CallOption represents an option for making a remote procedure call.
@@ -118,7 +118,7 @@ type CallOption func(o *callOpt)
 //
 //	opt := WithEncoding(pb.ContentEncoding_GZIP)
 //	client.Call(ctx, method, request, response, opt)
-func WithEncoding(encoding rrpcpb.ContentEncoding) CallOption {
+func WithEncoding(encoding pb_encoding.ContentEncoding) CallOption {
 	return func(o *callOpt) {
 		o.encoding = encoding
 	}

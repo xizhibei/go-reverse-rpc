@@ -1,4 +1,4 @@
-package reverse_rpc_json
+package json_encoding
 
 import "encoding/json"
 

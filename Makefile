@@ -35,15 +35,15 @@ mocks:
 
 .PHONY: protoc
 protoc:
-	find reverse_rpc_pb -type f  -name *.proto  \
+	find pb_encoding -type f  -name *.proto  \
 	| xargs -I {} \
 	protoc \
-	-I reverse_rpc_pb \
+	-I pb_encoding \
 	--go_out=. \
 	{}
-	find reverse_rpc_pb/test -type f  -name *.proto  \
+	find pb_encoding/test -type f  -name *.proto  \
 	| xargs -I {} \
 	protoc \
-	-I reverse_rpc_pb/test \
+	-I pb_encoding/test \
 	--go_out=. \
 	{}
