@@ -6,7 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
-	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
+	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -53,13 +53,13 @@ type MetadataGetter interface {
 }
 
 // Encoding returns the content encoding of the MQTTContext.
-func (c *MQTTContext) Encoding() pb.ContentEncoding {
+func (c *MQTTContext) Encoding() rrpcpb.ContentEncoding {
 	return c.req.Encoding
 }
 
 // EncodingGetter is an interface for getting the content encoding.
 type EncodingGetter interface {
-	Encoding() pb.ContentEncoding
+	Encoding() rrpcpb.ContentEncoding
 }
 
 // PrometheusLabels returns the Prometheus labels of the MQTTContext.

@@ -19,12 +19,15 @@ deps:
 
 .PHONY: test
 test:
-	@go test -cover -v $(shell go list ./... | grep -v /vendor/)
+	@go test $(shell go list ./... | grep -v /vendor/)
 
-.PHONY: coverage-report
-coverage-report:
-	@go test -cover -v $(shell go list ./... | grep -v /vendor/) -coverprofile=build/coverage.out
-	@go tool cover -html=build/coverage.out
+.PHONY: cover
+cover:
+	@go test -cover $(shell go list ./... | grep -v /vendor/) -coverprofile=coverage.out
+
+.PHONY: cover-report
+cover-report: cover
+	@go tool cover -html=coverage.out
 
 .PHONY: mocks
 mocks:
@@ -32,15 +35,15 @@ mocks:
 
 .PHONY: protoc
 protoc:
-	find reverse_rpc_pb/proto -type f  -name *.proto  \
+	find reverse_rpc_pb -type f  -name *.proto  \
 	| xargs -I {} \
 	protoc \
-	-I reverse_rpc_pb/proto \
+	-I reverse_rpc_pb \
 	--go_out=. \
 	{}
-	find reverse_rpc_pb/test/proto -type f  -name *.proto  \
+	find reverse_rpc_pb/test -type f  -name *.proto  \
 	| xargs -I {} \
 	protoc \
-	-I reverse_rpc_pb/test/proto \
+	-I reverse_rpc_pb/test \
 	--go_out=. \
 	{}

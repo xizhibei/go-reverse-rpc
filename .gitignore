@@ -9,6 +9,7 @@ dist
 .cache
 .gopath
 .gocache/
+*.out
 
 *.yaml
 !.*.yaml

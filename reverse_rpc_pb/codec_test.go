@@ -1,21 +1,20 @@
-package reverse_rpc_pb
+package reverse_rpc_pb_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
-	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
+	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func TestServerCodec_Marshal(t *testing.T) {
-	scodec := NewProtobufServerCodec()
-	ccodec := NewProtobufClientCodec()
+	scodec := rrpcpb.NewProtobufServerCodec()
+	ccodec := rrpcpb.NewProtobufClientCodec()
 
 	// Test decompression with non-nil body
 	res := &rrpcpb.Response{
-		Encoding: pb.ContentEncoding_GZIP,
+		Encoding: rrpcpb.ContentEncoding_GZIP,
 		Body: &anypb.Any{
 			TypeUrl: "[]byte",
 			Value:   []byte("response body"),
@@ -31,7 +30,7 @@ func TestServerCodec_Marshal(t *testing.T) {
 
 	// Test decompression with nil body
 	res = &rrpcpb.Response{
-		Encoding: pb.ContentEncoding_GZIP,
+		Encoding: rrpcpb.ContentEncoding_GZIP,
 		Body:     nil,
 	}
 	data, err = scodec.Marshal(res)
@@ -43,12 +42,12 @@ func TestServerCodec_Marshal(t *testing.T) {
 }
 
 func TestClientCodec_Marshal(t *testing.T) {
-	scodec := NewProtobufServerCodec()
-	ccodec := NewProtobufClientCodec()
+	scodec := rrpcpb.NewProtobufServerCodec()
+	ccodec := rrpcpb.NewProtobufClientCodec()
 
 	// Test compression with non-nil body
 	req := &rrpcpb.Request{
-		Encoding: pb.ContentEncoding_GZIP,
+		Encoding: rrpcpb.ContentEncoding_GZIP,
 		Body: &anypb.Any{
 			TypeUrl: "[]byte",
 			Value:   []byte("response body"),
@@ -64,7 +63,7 @@ func TestClientCodec_Marshal(t *testing.T) {
 
 	// Test compression with nil body
 	req = &rrpcpb.Request{
-		Encoding: pb.ContentEncoding_GZIP,
+		Encoding: rrpcpb.ContentEncoding_GZIP,
 		Body:     nil,
 	}
 	data, err = ccodec.Marshal(req)

@@ -8,7 +8,7 @@ import (
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
-	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
+	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
 
 	"github.com/cockroachdb/errors"
 	"go.uber.org/zap"
