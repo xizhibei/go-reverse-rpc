@@ -21,7 +21,7 @@ This project is currently under development, and the API may undergo breaking ch
 - Provides monitoring metrics for system insights
 - Implements error handling mechanisms for reliability
 
-## TODO
+#### TODO
 
 - Open telemetry support
 - WebSocket protocol support
@@ -30,7 +30,7 @@ This project is currently under development, and the API may undergo breaking ch
 ## Installation
 
 ```bash
-go get github.com/xizhibei/go-reverse-rpc
+go get github.com/xizhibei/go-reverse-rpc@latest
 ```
 
 ## Usage
@@ -39,10 +39,10 @@ go get github.com/xizhibei/go-reverse-rpc
 ```go
 import (
     mqtt_pb_server "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_server"
-    "github.com/xizhibei/go-reverse-rpc/mqtt"
+    "github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 )
 
-mqttClient, err := mqtt.NewClient("tcp://localhost", "123456-server")
+mqttClient, err := mqtt_adapter.New("tcp://localhost", "123456-server")
 if err != nil {
     panic(err)
 }
@@ -57,10 +57,10 @@ server := mqtt_pb_server.New(
 ```go
 import (
     mqtt_pb_client "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_client"
-    "github.com/xizhibei/go-reverse-rpc/mqtt"
+    "github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 )
 
-mqttClient, err := mqtt.NewClient("tcp://localhost", "123456-client")
+mqttClient, err := mqtt_adapter.New("tcp://localhost", "123456-client")
 if err != nil {
     panic(err)
 }

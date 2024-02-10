@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
-	"github.com/xizhibei/go-reverse-rpc/mqtt"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb"
 	rrpcpb "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
 
@@ -24,7 +24,7 @@ var (
 // Service represents a MQTT service.
 type Service struct {
 	*reverse_rpc.Server
-	iotClient *mqtt.Client
+	iotClient *mqtt_adapter.MQTTClientAdapter
 	codec     *reverse_rpc_pb.ProtobufServerCodec
 	log       *zap.SugaredLogger
 
@@ -33,7 +33,7 @@ type Service struct {
 
 // New creates a new Service instance with the provided MQTT client and options.
 // It returns a pointer to the Service and an error, if any.
-func New(client *mqtt.Client, subscribeTopic string, options ...reverse_rpc.ServerOption) *Service {
+func New(client *mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options ...reverse_rpc.ServerOption) *Service {
 	s := Service{
 		Server:         reverse_rpc.NewServer(options...),
 		iotClient:      client,
@@ -136,7 +136,7 @@ func (s *Service) reply(res *ResponseData) error {
 }
 
 func (s *Service) initReceive() error {
-	token := s.iotClient.Subscribe(s.subscribeTopic, reverse_rpc.DefaultQoS, func(client *mqtt.Client, m mqtt.Message) {
+	token := s.iotClient.Subscribe(s.subscribeTopic, reverse_rpc.DefaultQoS, func(client *mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
 		s.log.Debugf("Request from json pb topic %s, method %s", m.Topic(), "Subscribe")
 		req := RequestData{
 			Topic: m.Topic(),

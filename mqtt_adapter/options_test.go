@@ -1,4 +1,4 @@
-package mqtt
+package mqtt_adapter
 
 import (
 	"crypto/tls"

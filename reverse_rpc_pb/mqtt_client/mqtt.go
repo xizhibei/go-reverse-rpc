@@ -9,7 +9,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
-	"github.com/xizhibei/go-reverse-rpc/mqtt"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -22,7 +22,7 @@ var (
 
 // Client represents an MQTT client used for reverse RPC communication.
 type Client struct {
-	mqttClient         *mqtt.Client
+	mqttClient         *mqtt_adapter.MQTTClientAdapter
 	log                *zap.SugaredLogger
 	rpcClientCodecPool sync.Pool
 
@@ -33,7 +33,7 @@ type Client struct {
 // It initializes the MQTT client, sets the topic prefix, quality of service (QoS), content encoding,
 // and initializes the RPC client codec pool.
 // The returned pointer to the Client struct can be used to interact with the MQTT client.
-func New(client *mqtt.Client, topicPrefix string, encoding pb.ContentEncoding) *Client {
+func New(client *mqtt_adapter.MQTTClientAdapter, topicPrefix string, encoding pb.ContentEncoding) *Client {
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
@@ -51,7 +51,7 @@ func New(client *mqtt.Client, topicPrefix string, encoding pb.ContentEncoding) *
 }
 
 // Client returns the MQTT client associated with the reverse RPC client.
-func (s *Client) Client() *mqtt.Client {
+func (s *Client) Client() *mqtt_adapter.MQTTClientAdapter {
 	return s.mqttClient
 }
 
@@ -79,7 +79,7 @@ func (s *Client) Close() error {
 // The topic parameter specifies the topic to subscribe to.
 // The qos parameter specifies the desired QoS level for the subscription.
 // The cb parameter is a callback function that will be called when a message is received on the subscribed topic.
-func (s *Client) Subscribe(topic string, qos byte, cb mqtt.MessageCallback) {
+func (s *Client) Subscribe(topic string, qos byte, cb mqtt_adapter.MessageCallback) {
 	s.mqttClient.Subscribe(topic, qos, cb)
 }
 

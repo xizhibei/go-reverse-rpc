@@ -8,7 +8,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
-	"github.com/xizhibei/go-reverse-rpc/mqtt"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	"go.uber.org/zap"
 )
 
@@ -17,13 +17,13 @@ var (
 )
 
 type Client struct {
-	mqttClient *mqtt.Client
+	mqttClient *mqtt_adapter.MQTTClientAdapter
 	log        *zap.SugaredLogger
 
 	topicPrefix string
 }
 
-func New(client *mqtt.Client, topicPrefix string) *Client {
+func New(client *mqtt_adapter.MQTTClientAdapter, topicPrefix string) *Client {
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
@@ -35,7 +35,7 @@ func New(client *mqtt.Client, topicPrefix string) *Client {
 	return &s
 }
 
-func (s *Client) Client() *mqtt.Client {
+func (s *Client) Client() *mqtt_adapter.MQTTClientAdapter {
 	return s.mqttClient
 }
 
@@ -52,7 +52,7 @@ func (s *Client) Close() error {
 	return nil
 }
 
-func (s *Client) Subscribe(topic string, qos byte, cb mqtt.MessageCallback) {
+func (s *Client) Subscribe(topic string, qos byte, cb mqtt_adapter.MessageCallback) {
 	s.mqttClient.Subscribe(topic, qos, cb)
 }
 

@@ -1,4 +1,4 @@
-package mqtt
+package mqtt_adapter
 
 import (
 	"crypto/tls"
@@ -19,10 +19,10 @@ type Message = mqtt.Message
 
 // MessageCallback is a function type that represents a callback for handling MQTT messages.
 // It takes a pointer to a Client and a Message as parameters.
-type MessageCallback func(*Client, Message)
+type MessageCallback func(*MQTTClientAdapter, Message)
 
-// Client represents an MQTT client.
-type Client struct {
+// MQTTClientAdapter represents an MQTT client.
+type MQTTClientAdapter struct {
 	client mqtt.Client
 
 	subscribeMap sync.Map
@@ -81,12 +81,12 @@ func NewTLSConfig(pemCerts []byte) *tls.Config {
 	}
 }
 
-// NewClient creates a new MQTT client with the specified URI, client ID, and options.
+// New creates a new MQTT client with the specified URI, client ID, and options.
 // The URI should be in the format "scheme://host:port", where scheme can be "tcp" or "ssl".
 // The client ID is a unique identifier for the client.
 // The options parameter allows for additional configuration of the client.
 // Returns a pointer to the created Client and an error if any.
-func NewClient(uri, clientID string, options ...Option) (*Client, error) {
+func New(uri, clientID string, options ...Option) (*MQTTClientAdapter, error) {
 	server, err := url.Parse(uri)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func NewClient(uri, clientID string, options ...Option) (*Client, error) {
 
 	clonedServer := *server
 	clonedServer.User = nil
-	client := Client{
+	client := MQTTClientAdapter{
 		log:                   log,
 		printableURL:          clonedServer.String(),
 		stopRetryConnect:      false,
@@ -153,7 +153,7 @@ func NewClient(uri, clientID string, options ...Option) (*Client, error) {
 }
 
 // GetMqttClient returns the MQTT client associated with the Client instance.
-func (s *Client) GetMqttClient() mqtt.Client {
+func (s *MQTTClientAdapter) GetMqttClient() mqtt.Client {
 	return s.client
 }
 
@@ -161,7 +161,7 @@ func (s *Client) GetMqttClient() mqtt.Client {
 // If the client is already connected, the callback function is executed immediately.
 // Otherwise, the callback function is executed when the client successfully connects.
 // The callback function is unregistered after it is executed.
-func (s *Client) OnConnectOnce(cb OnConnectCallback) {
+func (s *MQTTClientAdapter) OnConnectOnce(cb OnConnectCallback) {
 	if s.client.IsConnected() {
 		cb()
 		return
@@ -176,7 +176,7 @@ func (s *Client) OnConnectOnce(cb OnConnectCallback) {
 // OnConnectLostOnce registers a callback function to be called when the MQTT client loses connection to the broker.
 // The callback function will be called only once and then automatically unregistered.
 // The provided callback function should accept an error parameter, which represents the reason for the connection loss.
-func (s *Client) OnConnectLostOnce(cb OnConnectLostCallback) {
+func (s *MQTTClientAdapter) OnConnectLostOnce(cb OnConnectLostCallback) {
 	var subID int
 	subID = s.OnConnectLost(func(err error) {
 		s.OffConnectLost(subID)
@@ -187,7 +187,7 @@ func (s *Client) OnConnectLostOnce(cb OnConnectLostCallback) {
 // OnConnect registers a callback function to be called when the MQTT client is connected.
 // The callback function will be invoked immediately if the client is already connected.
 // The function returns an index that can be used to unregister the callback using the UnregisterOnConnect method.
-func (s *Client) OnConnect(cb OnConnectCallback) int {
+func (s *MQTTClientAdapter) OnConnect(cb OnConnectCallback) int {
 	if s.client.IsConnected() {
 		cb()
 	}
@@ -202,7 +202,7 @@ func (s *Client) OnConnect(cb OnConnectCallback) int {
 }
 
 // OffConnect removes the onConnect callback function associated with the given index.
-func (s *Client) OffConnect(idx int) {
+func (s *MQTTClientAdapter) OffConnect(idx int) {
 	s.onConnectCallbakMutex.Lock()
 	defer s.onConnectCallbakMutex.Unlock()
 
@@ -212,7 +212,7 @@ func (s *Client) OffConnect(idx int) {
 // OnConnectLost registers a callback function to be called when the MQTT client loses connection.
 // The callback function will be invoked with an integer parameter representing the index of the callback.
 // Returns the index of the registered callback.
-func (s *Client) OnConnectLost(cb OnConnectLostCallback) int {
+func (s *MQTTClientAdapter) OnConnectLost(cb OnConnectLostCallback) int {
 	s.onConnectLostCallbakMutex.Lock()
 	defer s.onConnectLostCallbakMutex.Unlock()
 
@@ -224,7 +224,7 @@ func (s *Client) OnConnectLost(cb OnConnectLostCallback) int {
 
 // OffConnectLost removes the callback function associated with the given index from the onConnectLostCallbaks map.
 // It locks the onConnectLostCallbakMutex to ensure thread safety and then deletes the callback function from the map.
-func (s *Client) OffConnectLost(idx int) {
+func (s *MQTTClientAdapter) OffConnectLost(idx int) {
 	s.onConnectLostCallbakMutex.Lock()
 	defer s.onConnectLostCallbakMutex.Unlock()
 
@@ -233,7 +233,7 @@ func (s *Client) OffConnectLost(idx int) {
 
 // Connect establishes a connection to the MQTT broker.
 // It returns an error if the connection fails.
-func (s *Client) Connect() error {
+func (s *MQTTClientAdapter) Connect() error {
 	if token := s.client.Connect(); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
@@ -242,7 +242,7 @@ func (s *Client) Connect() error {
 
 // EnsureConnected ensures that the MQTT client is connected.
 // It starts a goroutine to connect to the MQTT broker and waits for the connection to be successful.
-func (s *Client) EnsureConnected() {
+func (s *MQTTClientAdapter) EnsureConnected() {
 	go s.ConnectAndWaitForSuccess()
 }
 
@@ -250,7 +250,7 @@ func (s *Client) EnsureConnected() {
 // If the client is already connected, it returns immediately.
 // If the connection fails, it retries every 10 seconds until a successful connection is established.
 // The function stops retrying if the stopRetryConnect flag is set to true.
-func (s *Client) ConnectAndWaitForSuccess() {
+func (s *MQTTClientAdapter) ConnectAndWaitForSuccess() {
 	if !s.IsConnected() {
 		for !s.stopRetryConnect {
 			if s.IsConnected() {
@@ -273,14 +273,14 @@ func (s *Client) ConnectAndWaitForSuccess() {
 // Disconnect disconnects the MQTT client from the broker.
 // It stops the retry connection mechanism and calls the Disconnect method of the underlying MQTT client.
 // The timeout parameter specifies the maximum time to wait for the disconnection to complete, in milliseconds.
-func (s *Client) Disconnect() {
+func (s *MQTTClientAdapter) Disconnect() {
 	s.stopRetryConnect = true
 	s.client.Disconnect(1000)
 }
 
 // IsConnected returns a boolean value indicating whether the client is currently connected to the MQTT broker.
 // It checks if the connection to the broker is open.
-func (s *Client) IsConnected() bool {
+func (s *MQTTClientAdapter) IsConnected() bool {
 	return s.client.IsConnectionOpen()
 }
 
@@ -292,7 +292,7 @@ func (s *Client) IsConnected() bool {
 // The callback function should have the following signature: func(client *Client, message mqtt.Message).
 // The function returns a mqtt.Token that can be used to track the status of the subscription.
 // If an error occurs during the subscription, it will be logged and returned as part of the token.
-func (s *Client) Subscribe(topic string, qos byte, onMsg MessageCallback) mqtt.Token {
+func (s *MQTTClientAdapter) Subscribe(topic string, qos byte, onMsg MessageCallback) mqtt.Token {
 	s.log.Debugf("Subscribe topic=%s qos=%d", topic, qos)
 	callback := func(c mqtt.Client, m mqtt.Message) {
 		onMsg(s, m)
@@ -336,7 +336,7 @@ func (s *Client) Subscribe(topic string, qos byte, onMsg MessageCallback) mqtt.T
 //	if err := token.Error(); err != nil {
 //	  // Handle subscription error
 //	}
-func (s *Client) SubscribeMultiple(filters map[string]byte, onMsg MessageCallback) mqtt.Token {
+func (s *MQTTClientAdapter) SubscribeMultiple(filters map[string]byte, onMsg MessageCallback) mqtt.Token {
 	s.log.Debugf("SubscribeMultiple topic=%v", filters)
 	callback := func(c mqtt.Client, m mqtt.Message) {
 		onMsg(s, m)
@@ -357,7 +357,7 @@ func (s *Client) SubscribeMultiple(filters map[string]byte, onMsg MessageCallbac
 // SubscribeWait subscribes to a topic with the specified QoS level and waits for the subscription to complete.
 // It also registers a callback function to handle incoming messages on the subscribed topic.
 // If there is an error during the subscription process, it returns the error.
-func (s *Client) SubscribeWait(topic string, qos byte, onMsg MessageCallback) error {
+func (s *MQTTClientAdapter) SubscribeWait(topic string, qos byte, onMsg MessageCallback) error {
 	if token := s.Subscribe(topic, qos, onMsg); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
@@ -370,7 +370,7 @@ func (s *Client) SubscribeWait(topic string, qos byte, onMsg MessageCallback) er
 // After unsubscribing, it removes the topics from the subscribeMap.
 // If any error occurs during the unsubscribe process, it returns the error.
 // Otherwise, it returns nil.
-func (s *Client) UnsubscribeAll() error {
+func (s *MQTTClientAdapter) UnsubscribeAll() error {
 	topics := []string{}
 	s.subscribeMap.Range(func(key interface{}, value interface{}) bool {
 		topics = append(topics, key.(string))
@@ -389,7 +389,7 @@ func (s *Client) UnsubscribeAll() error {
 // Unsubscribe unsubscribes from a topic.
 // It removes the topic from the subscribeMap and sends an unsubscribe request to the MQTT broker.
 // If there is an error during the unsubscribe process, it returns the error; otherwise, it returns nil.
-func (s *Client) Unsubscribe(topic string) error {
+func (s *MQTTClientAdapter) Unsubscribe(topic string) error {
 	s.log.Debugf("Unsubscribe topic=%s", topic)
 	s.subscribeMap.Delete(topic)
 	if token := s.client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
@@ -401,11 +401,11 @@ func (s *Client) Unsubscribe(topic string) error {
 
 // PublishBytes publishes a message with the given topic, quality of service (qos), retained flag, and data.
 // It returns an mqtt.Token representing the publish operation.
-func (s *Client) PublishBytes(topic string, qos byte, retained bool, data []byte) mqtt.Token {
+func (s *MQTTClientAdapter) PublishBytes(topic string, qos byte, retained bool, data []byte) mqtt.Token {
 	return s.client.Publish(topic, qos, retained, data)
 }
 
-func (s *Client) publishObject(topic string, qos byte, payload interface{}) (mqtt.Token, error) {
+func (s *MQTTClientAdapter) publishObject(topic string, qos byte, payload interface{}) (mqtt.Token, error) {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -416,7 +416,7 @@ func (s *Client) publishObject(topic string, qos byte, payload interface{}) (mqt
 
 // Publish publishes a message to the specified topic with the given quality of service (QoS) level and payload.
 // It returns an error if the message fails to be published.
-func (s *Client) Publish(topic string, qos byte, payload interface{}) error {
+func (s *MQTTClientAdapter) Publish(topic string, qos byte, payload interface{}) error {
 	token, err := s.publishObject(topic, qos, payload)
 	if err != nil {
 		return err
@@ -426,7 +426,7 @@ func (s *Client) Publish(topic string, qos byte, payload interface{}) error {
 
 // PublishWait publishes a message to the specified topic with the given quality of service (qos) and payload.
 // It waits for the message to be published and returns an error if there was a problem.
-func (s *Client) PublishWait(topic string, qos byte, payload interface{}) error {
+func (s *MQTTClientAdapter) PublishWait(topic string, qos byte, payload interface{}) error {
 	token, err := s.publishObject(topic, qos, payload)
 	if err != nil {
 		return err
@@ -443,7 +443,7 @@ func (s *Client) PublishWait(topic string, qos byte, payload interface{}) error 
 // PublishWaitTimeout publishes a message to the MQTT broker with the specified topic, quality of service (QoS),
 // timeout duration, and payload. It waits for the completion of the publish operation with the given timeout.
 // If the operation times out or encounters an error, it returns the corresponding error.
-func (s *Client) PublishWaitTimeout(topic string, qos byte, timeout time.Duration, payload interface{}) error {
+func (s *MQTTClientAdapter) PublishWaitTimeout(topic string, qos byte, timeout time.Duration, payload interface{}) error {
 	token, err := s.publishObject(topic, qos, payload)
 	if err != nil {
 		return err

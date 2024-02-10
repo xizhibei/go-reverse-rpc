@@ -1,7 +1,7 @@
 // Package mqtt provides options for configuring MQTT client.
 // It includes various options for setting up the client, such as enabling debug mode,
 // setting username and password, configuring TLS, setting will messages, and more.
-package mqtt
+package mqtt_adapter
 
 import (
 	"crypto/tls"

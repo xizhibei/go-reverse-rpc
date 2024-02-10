@@ -9,7 +9,7 @@ import (
 	"time"
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
-	"github.com/xizhibei/go-reverse-rpc/mqtt"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	mqtt_pb_client "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_client"
 	mqtt_pb_server "github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/mqtt_server"
 	"github.com/xizhibei/go-reverse-rpc/reverse_rpc_pb/pb"
@@ -54,7 +54,7 @@ func (suite *MQTTTestSuite) SetupSuite() {
 	suite.T().Logf("uri %s", suite.uri)
 	suite.T().Logf("topicPrefix %s", suite.topicPrefix)
 
-	iotServer, err := mqtt.NewClient(suite.uri, clientID+"server")
+	iotServer, err := mqtt_adapter.New(suite.uri, clientID+"server")
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +65,7 @@ func (suite *MQTTTestSuite) SetupSuite() {
 	)
 	suite.service = service
 
-	iotClient, err := mqtt.NewClient(suite.uri, clientID+"client")
+	iotClient, err := mqtt_adapter.New(suite.uri, clientID+"client")
 	if err != nil {
 		panic(err)
 	}
