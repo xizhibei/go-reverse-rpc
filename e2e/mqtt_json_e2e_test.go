@@ -1,4 +1,4 @@
-package mqtt_pb_server_test
+package mqtt_e2e_test
 
 import (
 	"context"
@@ -10,35 +10,34 @@ import (
 
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
-	"github.com/xizhibei/go-reverse-rpc/mqtt_pb_client"
-	"github.com/xizhibei/go-reverse-rpc/mqtt_pb_server"
-	"github.com/xizhibei/go-reverse-rpc/pb_encoding"
-	testpb "github.com/xizhibei/go-reverse-rpc/pb_encoding/test"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_json_client"
+	"github.com/xizhibei/go-reverse-rpc/mqtt_json_server"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 )
 
-type MQTTTestSuite struct {
+type MQTTJsonTestSuite struct {
 	suite.Suite
-	service *mqtt_pb_server.Service
-	client  *mqtt_pb_client.Client
+	service *mqtt_json_server.Service
+	client  *mqtt_json_client.Client
 
 	topicPrefix string
 	uri         string
 	deviceId    string
 }
 
-func (suite *MQTTTestSuite) SetupSuite() {
+func (suite *MQTTJsonTestSuite) SetupSuite() {
 	log, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
 	}
 	zap.ReplaceGlobals(log)
 
-	clientID := uuid.NewString()
+	clientID := uuid.New().String()
 	suite.deviceId = uuid.NewString()
 	suite.uri = "tcp://test:123456@localhost:1883"
 	suite.topicPrefix = "test/example"
@@ -59,9 +58,10 @@ func (suite *MQTTTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	service := mqtt_pb_server.New(
+	service := mqtt_json_server.New(
 		iotServer,
 		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
+		validator.New(),
 	)
 	suite.service = service
 
@@ -70,168 +70,146 @@ func (suite *MQTTTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	client := mqtt_pb_client.New(
+	client := mqtt_json_client.New(
 		iotClient,
 		suite.topicPrefix,
-		pb_encoding.ContentEncoding_GZIP,
 	)
-	if err != nil {
-		panic(err)
-	}
 	suite.client = client
 
 	time.Sleep(500 * time.Millisecond)
 }
 
-func (suite *MQTTTestSuite) TearDownSuite() {
+func (suite *MQTTJsonTestSuite) TearDownSuite() {
 	suite.service.Close()
 	suite.client.Close()
 }
 
-func (suite *MQTTTestSuite) TestNormalCall() {
-	reqParams := testpb.TestRequestBody{
-		Id:  123,
-		Str: "testpb.TestRequestBody",
-	}
-	resParams := testpb.TestResponseBody{
-		Id:  456,
-		Str: "testpb.TestResponseBody",
-	}
+type Req struct {
+	A string `json:"a"`
+	B int64  `json:"b"`
+}
 
+func (suite *MQTTJsonTestSuite) TestNormalCall() {
+	reqParams := Req{
+		A: "a",
+		B: 1,
+	}
 	method := "test_normal_call"
 
 	suite.service.Register(method, &reverse_rpc.Handler{
 		Method: func(c reverse_rpc.Context) {
-			var req testpb.TestRequestBody
+			var req Req
 			err := c.Bind(&req)
 			if err != nil {
 				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
-			if eg, ok := c.(mqtt_pb_server.EncodingGetter); ok {
-				fmt.Printf("req encoding %v\n", eg.Encoding())
-			}
+			suite.Equal(req.A, reqParams.A)
+			suite.Equal(req.B, reqParams.B)
 
-			fmt.Printf("req %v", &req)
-
-			suite.Equal(req.Id, reqParams.Id)
-			suite.Equal(req.Str, reqParams.Str)
-
-			c.ReplyOK(&resParams)
+			c.ReplyOK(req)
 		},
 		Timeout: 5 * time.Second,
 	})
 
-	encodings := []pb_encoding.ContentEncoding{
-		pb_encoding.ContentEncoding_BROTLI,
-		pb_encoding.ContentEncoding_DEFLATE,
-		pb_encoding.ContentEncoding_GZIP,
-		pb_encoding.ContentEncoding_PLAIN,
-	}
+	var res Req
+	err := suite.client.Call(context.Background(), suite.deviceId, method, &reqParams, &res)
+	require.Nil(suite.T(), err)
 
-	for _, e := range encodings {
-		var res testpb.TestResponseBody
-		err := suite.client.Call(context.Background(), suite.deviceId, method, &reqParams, &res, mqtt_pb_client.WithEncoding(e))
-		require.Nil(suite.T(), err)
-
-		suite.Equal(res.Id, resParams.Id)
-		suite.Equal(res.Str, resParams.Str)
-	}
+	suite.Equal(res.A, reqParams.A)
+	suite.Equal(res.B, reqParams.B)
 }
 
-func (suite *MQTTTestSuite) TestErrCall() {
-	reqParams := testpb.TestRequestBody{
-		Id:  123,
-		Str: "testpb.TestRequestBody",
+func (suite *MQTTJsonTestSuite) TestErrCall() {
+	reqParams := Req{
+		A: "a",
+		B: 1,
 	}
-
-	method := "test_err_call"
+	method := "test_error_call"
 
 	suite.service.Register(method, &reverse_rpc.Handler{
 		Method: func(c reverse_rpc.Context) {
-			var req testpb.TestRequestBody
+			var req Req
 			err := c.Bind(&req)
 			if err != nil {
 				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
-			suite.Equal(req.Id, reqParams.Id)
-			suite.Equal(req.Str, reqParams.Str)
+			suite.Equal(req.A, reqParams.A)
+			suite.Equal(req.B, reqParams.B)
 
 			c.ReplyError(reverse_rpc.RPCStatusClientError, fmt.Errorf("response error"))
 		},
 		Timeout: 5 * time.Second,
 	})
 
-	var res testpb.TestResponseBody
+	var res Req
 	err := suite.client.Call(context.Background(), suite.deviceId, method, &reqParams, &res)
 	suite.Equal("response error", err.Error())
 }
 
-func (suite *MQTTTestSuite) TestTimeoutCall() {
-	reqParams := testpb.TestRequestBody{
-		Id:  123,
-		Str: "testpb.TestRequestBody",
+func (suite *MQTTJsonTestSuite) TestTimeoutCall() {
+	reqParams := Req{
+		A: "a",
+		B: 1,
 	}
-
 	method := "test_timeout_call"
 
 	suite.service.Register(method, &reverse_rpc.Handler{
 		Method: func(c reverse_rpc.Context) {
-			var req testpb.TestRequestBody
+			var req Req
 			err := c.Bind(&req)
 			if err != nil {
 				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
-			suite.Equal(req.Id, reqParams.Id)
-			suite.Equal(req.Str, reqParams.Str)
+			suite.Equal(req.A, reqParams.A)
+			suite.Equal(req.B, reqParams.B)
 
 			time.Sleep(100 * time.Millisecond)
 
-			c.ReplyOK(&req)
+			c.ReplyOK(req)
 		},
 		Timeout: 50 * time.Millisecond,
 	})
 
-	var res testpb.TestRequestBody
+	var res Req
 	err := suite.client.Call(context.Background(), suite.deviceId, method, &reqParams, &res)
 	suite.Equal("job request timed out", err.Error())
 }
 
-func (suite *MQTTTestSuite) TestPanicCall() {
-	reqParams := testpb.TestRequestBody{
-		Id:  123,
-		Str: "testpb.TestRequestBody",
+func (suite *MQTTJsonTestSuite) TestPanicCall() {
+	reqParams := Req{
+		A: "a",
+		B: 1,
 	}
-
 	method := "test_panic_call"
 
 	suite.service.Register(method, &reverse_rpc.Handler{
 		Method: func(c reverse_rpc.Context) {
-			var req testpb.TestRequestBody
+			var req Req
 			err := c.Bind(&req)
 			if err != nil {
 				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
 				return
 			}
 
-			suite.Equal(req.Id, reqParams.Id)
-			suite.Equal(req.Str, reqParams.Str)
+			suite.Equal(req.A, reqParams.A)
+			suite.Equal(req.B, reqParams.B)
 
 			panic(fmt.Errorf("panic error"))
 		},
 		Timeout: 5 * time.Second,
 	})
 
-	var res testpb.TestRequestBody
+	var res Req
 	err := suite.client.Call(context.Background(), suite.deviceId, method, &reqParams, &res)
 	suite.Equal("panic in method test_panic_call panic error", err.Error())
 }
 
-func TestServer(t *testing.T) {
-	suite.Run(t, new(MQTTTestSuite))
+func TestMQTTJson(t *testing.T) {
+	suite.Run(t, new(MQTTJsonTestSuite))
 }

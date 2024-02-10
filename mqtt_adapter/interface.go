@@ -1,6 +1,6 @@
 package mqtt_adapter
 
-//go:generate mockgen -source=interface.go -destination=mock/mock_mqtt.go
+//go:generate mockgen -source=interface.go -destination=mock/mock_mqtt_adapter.go
 
 import (
 	"time"
@@ -34,7 +34,6 @@ type MQTTClientAdapter interface {
 	UnsubscribeAll() error
 	Unsubscribe(topic string) error
 	PublishBytes(topic string, qos byte, retained bool, data []byte) mqtt.Token
-	publishObject(topic string, qos byte, payload interface{}) (mqtt.Token, error)
 	Publish(topic string, qos byte, payload interface{}) error
 	PublishWait(topic string, qos byte, payload interface{}) error
 	PublishWaitTimeout(topic string, qos byte, timeout time.Duration, payload interface{}) error
