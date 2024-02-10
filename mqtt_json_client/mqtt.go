@@ -17,13 +17,13 @@ var (
 )
 
 type Client struct {
-	mqttClient *mqtt_adapter.MQTTClientAdapter
+	mqttClient mqtt_adapter.MQTTClientAdapter
 	log        *zap.SugaredLogger
 
 	topicPrefix string
 }
 
-func New(client *mqtt_adapter.MQTTClientAdapter, topicPrefix string) *Client {
+func New(client mqtt_adapter.MQTTClientAdapter, topicPrefix string) *Client {
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
@@ -35,7 +35,7 @@ func New(client *mqtt_adapter.MQTTClientAdapter, topicPrefix string) *Client {
 	return &s
 }
 
-func (s *Client) Client() *mqtt_adapter.MQTTClientAdapter {
+func (s *Client) Client() mqtt_adapter.MQTTClientAdapter {
 	return s.mqttClient
 }
 

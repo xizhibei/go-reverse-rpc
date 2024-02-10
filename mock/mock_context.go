@@ -13,6 +13,113 @@ import (
 	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 )
 
+// MockChildContext is a mock of ChildContext interface.
+type MockChildContext struct {
+	ctrl     *gomock.Controller
+	recorder *MockChildContextMockRecorder
+}
+
+// MockChildContextMockRecorder is the mock recorder for MockChildContext.
+type MockChildContextMockRecorder struct {
+	mock *MockChildContext
+}
+
+// NewMockChildContext creates a new mock instance.
+func NewMockChildContext(ctrl *gomock.Controller) *MockChildContext {
+	mock := &MockChildContext{ctrl: ctrl}
+	mock.recorder = &MockChildContextMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockChildContext) EXPECT() *MockChildContextMockRecorder {
+	return m.recorder
+}
+
+// Bind mocks base method.
+func (m *MockChildContext) Bind(request interface{}) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Bind", request)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Bind indicates an expected call of Bind.
+func (mr *MockChildContextMockRecorder) Bind(request interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bind", reflect.TypeOf((*MockChildContext)(nil).Bind), request)
+}
+
+// ID mocks base method.
+func (m *MockChildContext) ID() *reverse_rpc.ID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(*reverse_rpc.ID)
+	return ret0
+}
+
+// ID indicates an expected call of ID.
+func (mr *MockChildContextMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockChildContext)(nil).ID))
+}
+
+// Method mocks base method.
+func (m *MockChildContext) Method() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Method")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Method indicates an expected call of Method.
+func (mr *MockChildContextMockRecorder) Method() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Method", reflect.TypeOf((*MockChildContext)(nil).Method))
+}
+
+// PrometheusLabels mocks base method.
+func (m *MockChildContext) PrometheusLabels() prometheus.Labels {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PrometheusLabels")
+	ret0, _ := ret[0].(prometheus.Labels)
+	return ret0
+}
+
+// PrometheusLabels indicates an expected call of PrometheusLabels.
+func (mr *MockChildContextMockRecorder) PrometheusLabels() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrometheusLabels", reflect.TypeOf((*MockChildContext)(nil).PrometheusLabels))
+}
+
+// Reply mocks base method.
+func (m *MockChildContext) Reply(res *reverse_rpc.Response) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reply", res)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Reply indicates an expected call of Reply.
+func (mr *MockChildContextMockRecorder) Reply(res interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reply", reflect.TypeOf((*MockChildContext)(nil).Reply), res)
+}
+
+// ReplyDesc mocks base method.
+func (m *MockChildContext) ReplyDesc() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReplyDesc")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// ReplyDesc indicates an expected call of ReplyDesc.
+func (mr *MockChildContextMockRecorder) ReplyDesc() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplyDesc", reflect.TypeOf((*MockChildContext)(nil).ReplyDesc))
+}
+
 // MockContext is a mock of Context interface.
 type MockContext struct {
 	ctrl     *gomock.Controller
@@ -50,18 +157,18 @@ func (mr *MockContextMockRecorder) Bind(request interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bind", reflect.TypeOf((*MockContext)(nil).Bind), request)
 }
 
-// Context mocks base method.
-func (m *MockContext) Context() context.Context {
+// Ctx mocks base method.
+func (m *MockContext) Ctx() context.Context {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
+	ret := m.ctrl.Call(m, "Ctx")
 	ret0, _ := ret[0].(context.Context)
 	return ret0
 }
 
-// Context indicates an expected call of Context.
-func (mr *MockContextMockRecorder) Context() *gomock.Call {
+// Ctx indicates an expected call of Ctx.
+func (mr *MockContextMockRecorder) Ctx() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockContext)(nil).Context))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ctx", reflect.TypeOf((*MockContext)(nil).Ctx))
 }
 
 // GetResponse mocks base method.

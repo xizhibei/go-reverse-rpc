@@ -23,7 +23,7 @@ var (
 // Service represents a MQTT service.
 type Service struct {
 	*reverse_rpc.Server
-	iotClient *mqtt_adapter.MQTTClientAdapter
+	iotClient mqtt_adapter.MQTTClientAdapter
 	codec     *pb_encoding.ProtobufServerCodec
 	log       *zap.SugaredLogger
 
@@ -32,7 +32,7 @@ type Service struct {
 
 // New creates a new Service instance with the provided MQTT client and options.
 // It returns a pointer to the Service and an error, if any.
-func New(client *mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options ...reverse_rpc.ServerOption) *Service {
+func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options ...reverse_rpc.ServerOption) *Service {
 	s := Service{
 		Server:         reverse_rpc.NewServer(options...),
 		iotClient:      client,
@@ -135,7 +135,7 @@ func (s *Service) reply(res *ResponseData) error {
 }
 
 func (s *Service) initReceive() error {
-	token := s.iotClient.Subscribe(s.subscribeTopic, reverse_rpc.DefaultQoS, func(client *mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
+	token := s.iotClient.Subscribe(s.subscribeTopic, reverse_rpc.DefaultQoS, func(client mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
 		s.log.Debugf("Request from json pb topic %s, method %s", m.Topic(), "Subscribe")
 		req := RequestData{
 			Topic: m.Topic(),

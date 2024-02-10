@@ -15,7 +15,7 @@ type rpcConn struct {
 
 	requestTopic  string
 	responseTopic string
-	c             *mqtt_adapter.MQTTClientAdapter
+	c             mqtt_adapter.MQTTClientAdapter
 	qos           byte
 
 	log *zap.SugaredLogger
@@ -23,7 +23,7 @@ type rpcConn struct {
 	bytesReader *bytes.Reader
 }
 
-func newRPCConn(requestTopic, responseTopic string, c *mqtt_adapter.MQTTClientAdapter, qos byte) (io.ReadWriteCloser, error) {
+func newRPCConn(requestTopic, responseTopic string, c mqtt_adapter.MQTTClientAdapter, qos byte) (io.ReadWriteCloser, error) {
 	conn := rpcConn{
 		readyChan:     make(chan struct{}),
 		requestTopic:  requestTopic,
@@ -34,7 +34,7 @@ func newRPCConn(requestTopic, responseTopic string, c *mqtt_adapter.MQTTClientAd
 	}
 
 	c.OnConnect(func() {
-		tk := c.Subscribe(responseTopic, qos, func(c *mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
+		tk := c.Subscribe(responseTopic, qos, func(c mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
 			conn.log.Infof("Receive data from %s len=%d", m.Topic(), len(m.Payload()))
 			conn.bytesReader = bytes.NewReader(m.Payload())
 			conn.ready = true
@@ -84,7 +84,7 @@ func (c *rpcConn) Close() error {
 // It takes the request topic, reply topic, MQTT client, and quality of service (QoS) as parameters.
 // The function creates a new RPC connection using the provided parameters and returns a reverse_rpc_json.Client.
 // If an error occurs during the connection establishment, it returns nil and the error.
-func Dial(reqTopic, replyTopic string, c *mqtt_adapter.MQTTClientAdapter, qos byte) (*rpc.Client, error) {
+func Dial(reqTopic, replyTopic string, c mqtt_adapter.MQTTClientAdapter, qos byte) (*rpc.Client, error) {
 	conn, err := newRPCConn(reqTopic, replyTopic, c, qos)
 	if err != nil {
 		return nil, err

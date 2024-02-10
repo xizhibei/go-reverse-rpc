@@ -22,7 +22,7 @@ var (
 
 // Client represents an MQTT client used for reverse RPC communication.
 type Client struct {
-	mqttClient         *mqtt_adapter.MQTTClientAdapter
+	mqttClient         mqtt_adapter.MQTTClientAdapter
 	log                *zap.SugaredLogger
 	rpcClientCodecPool sync.Pool
 
@@ -33,7 +33,7 @@ type Client struct {
 // It initializes the MQTT client, sets the topic prefix, quality of service (QoS), content encoding,
 // and initializes the RPC client codec pool.
 // The returned pointer to the Client struct can be used to interact with the MQTT client.
-func New(client *mqtt_adapter.MQTTClientAdapter, topicPrefix string, encoding pb_encoding.ContentEncoding) *Client {
+func New(client mqtt_adapter.MQTTClientAdapter, topicPrefix string, encoding pb_encoding.ContentEncoding) *Client {
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
@@ -51,7 +51,7 @@ func New(client *mqtt_adapter.MQTTClientAdapter, topicPrefix string, encoding pb
 }
 
 // Client returns the MQTT client associated with the reverse RPC client.
-func (s *Client) Client() *mqtt_adapter.MQTTClientAdapter {
+func (s *Client) Client() mqtt_adapter.MQTTClientAdapter {
 	return s.mqttClient
 }
 
