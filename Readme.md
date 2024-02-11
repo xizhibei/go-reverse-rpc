@@ -2,7 +2,7 @@
 
 A remote procedure call (RPC) framework designed for connecting to devices remotely. It enables the "server" to call functions provided by the "client".
 
-[![Build Status](https://github.com/xizhibei/go-reverse-rpc/workflows/go/badge.svg?branch=master)](https://github.com/xizhibei/go-reverse-rpc/actions?query=branch%3Amaster)
+[![Build Status](https://github.com/xizhibei/go-reverse-rpc/actions/workflows/go.yml/badge.svg)](https://github.com/xizhibei/go-reverse-rpc/actions/workflows/go.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xizhibei/go-reverse-rpc)](https://goreportcard.com/report/github.com/xizhibei/go-reverse-rpc)
 [![GoDoc](https://pkg.go.dev/badge/github.com/xizhibei/go-reverse-rpc?status.svg)](https://pkg.go.dev/github.com/xizhibei/go-reverse-rpc?tab=doc)
 <!-- [![codecov](https://codecov.io/gh/xizhibei/go-reverse-rpc/branch/master/graph/badge.svg)](https://codecov.io/gh/xizhibei/go-reverse-rpc) -->
@@ -58,6 +58,7 @@ server := mqtt_pb_server.New(
 import (
     "github.com/xizhibei/go-reverse-rpc/mqtt_pb_client"
     "github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
+    "github.com/xizhibei/go-reverse-rpc/pb_encoding"
 )
 
 mqttClient, err := mqtt_adapter.New("tcp://localhost", "123456-client")
