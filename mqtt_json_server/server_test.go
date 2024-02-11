@@ -169,7 +169,6 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 			ID:     0,
 			Method: "test",
 			Params: b,
-			Status: 200,
 		}
 		reqBytes, err := json.Marshal(req)
 		suite.NoError(err)
@@ -204,7 +203,6 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 			ID:     0,
 			Method: "test-fail",
 			Params: b,
-			Status: 200,
 		}
 		reqBytes, err := json.Marshal(req)
 		suite.NoError(err)
@@ -228,7 +226,6 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 			ID:     0,
 			Method: "test-panic",
 			Params: b,
-			Status: 200,
 		}
 		reqBytes, err := json.Marshal(req)
 		suite.NoError(err)

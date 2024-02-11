@@ -108,7 +108,6 @@ func (suite *MQTTJsonClientTestSuite) TestCall() {
 		ID:     0,
 		Method: "test",
 		Params: p,
-		Status: 0,
 	}
 
 	// reqBytes, err := json.Marshal(req)

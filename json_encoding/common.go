@@ -6,7 +6,6 @@ import "encoding/json"
 type Request struct {
 	ID       uint64            `json:"id"`
 	Method   string            `json:"method"`
-	Status   int               `json:"status"`
 	Metadata map[string]string `json:"metadata,omitempty"`
 	Params   json.RawMessage   `json:"params"`
 }
