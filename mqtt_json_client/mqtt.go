@@ -27,7 +27,7 @@ func New(client mqtt_adapter.MQTTClientAdapter, topicPrefix string) *Client {
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
-		log:         zap.S().With("module", "rrpc.pb.mqtt.client"),
+		log:         zap.S().With("module", "rrpc.mqtt_json_client"),
 	}
 
 	client.EnsureConnected()

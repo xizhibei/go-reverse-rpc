@@ -40,7 +40,7 @@ func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, validator
 		Server:         reverse_rpc.NewServer(options...),
 		iotClient:      client,
 		subscribeTopic: subscribeTopic,
-		log:            zap.S().With("module", "rrpc.pb.mqtt.server"),
+		log:            zap.S().With("module", "rrpc.mqtt_json_server"),
 		validator:      validator,
 	}
 

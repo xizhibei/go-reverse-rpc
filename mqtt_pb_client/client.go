@@ -48,7 +48,7 @@ func NewRPCClientCodecWithConn(conn io.ReadWriteCloser, encoding pb_encoding.Con
 		encoding: encoding,
 		pending:  make(map[uint64]string),
 		codec:    pb_encoding.NewProtobufClientCodec(),
-		log:      zap.S().With("module", "reverse_rpc.client"),
+		log:      zap.S().With("module", "rrpc.mqtt_pb_client"),
 	}
 }
 

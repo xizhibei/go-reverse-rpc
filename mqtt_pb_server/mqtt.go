@@ -38,7 +38,7 @@ func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options .
 		iotClient:      client,
 		subscribeTopic: subscribeTopic,
 		codec:          pb_encoding.NewProtobufServerCodec(),
-		log:            zap.S().With("module", "rrpc.pb.mqtt.server"),
+		log:            zap.S().With("module", "rrpc.mqtt_pb_server"),
 	}
 
 	client.EnsureConnected()

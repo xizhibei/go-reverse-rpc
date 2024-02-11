@@ -39,7 +39,7 @@ func New(uri string, options ...reverse_rpc.ServerOption) (*Service, error) {
 		uri:    uri,
 		host:   parsedURI.Host,
 		path:   parsedURI.Path,
-		log:    zap.S().With("module", "rrpc.pb.ws.server"),
+		log:    zap.S().With("module", "rrpc.ws_json_server"),
 	}
 
 	s.initReceive()

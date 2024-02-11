@@ -32,7 +32,7 @@ func NewConn(requestTopic, responseTopic string, c mqtt_adapter.MQTTClientAdapte
 		responseTopic: responseTopic,
 		c:             c,
 		qos:           qos,
-		log:           zap.S().With("module", "rrpc.pb.mqtt.client.conn"),
+		log:           zap.S().With("module", "rrpc.mqtt_pb_client.conn"),
 	}
 
 	c.OnConnect(func() {

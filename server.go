@@ -108,7 +108,7 @@ func NewServer(options ...ServerOption) *Server {
 	limiter := rate.NewLimiter(rt, o.limiterCount)
 
 	server := Server{
-		log:        zap.S().With("module", "rrpc"),
+		log:        zap.S().With("module", "rrpc.server"),
 		handlerMap: make(map[string]*Handler),
 		options:    &o,
 

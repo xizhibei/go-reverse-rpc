@@ -37,7 +37,7 @@ func New(client mqtt_adapter.MQTTClientAdapter, topicPrefix string, encoding pb_
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
-		log:         zap.S().With("module", "rrpc.pb.mqtt.client"),
+		log:         zap.S().With("module", "rrpc.mqtt_pb_client"),
 		rpcClientCodecPool: sync.Pool{
 			New: func() interface{} {
 				return NewRPCClientCodec(encoding)

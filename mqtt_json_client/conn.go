@@ -30,7 +30,7 @@ func newRPCConn(requestTopic, responseTopic string, c mqtt_adapter.MQTTClientAda
 		responseTopic: responseTopic,
 		c:             c,
 		qos:           qos,
-		log:           zap.S().With("module", "rrpc.pb.mqtt.client.conn"),
+		log:           zap.S().With("module", "rrpc.mqtt_json_client.conn"),
 	}
 
 	c.OnConnect(func() {
