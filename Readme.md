@@ -16,7 +16,7 @@ This project is currently under development, and the API may undergo breaking ch
 
 ## Features
 
-- Supports multiple communication protocols - currently implemented MQTT, with WebSocket protocol support under development
+- Supports multiple communication protocols - currently implemented MQTT 3.1/3.11
 - Allows encoding data in different formats - currently supports JSON and Protobuf
 - Provides monitoring metrics for system insights
 - Implements error handling mechanisms for reliability
@@ -24,6 +24,7 @@ This project is currently under development, and the API may undergo breaking ch
 #### TODO
 
 - Open telemetry support
+- MQTT v5 protocol support
 - WebSocket protocol support
 - AMQP protocol support
 
@@ -69,7 +70,7 @@ if err != nil {
 client := mqtt_pb_client.New(
     mqttClient,
     "example",
-    pb.ContentEncoding_GZIP,
+    pb_encoding.ContentEncoding_GZIP,
 )
 ```
 
