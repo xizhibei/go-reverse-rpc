@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	prometheus "github.com/prometheus/client_golang/prometheus"
-	go_reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -56,10 +56,10 @@ func (mr *MockChildContextMockRecorder) Bind(request any) *gomock.Call {
 }
 
 // ID mocks base method.
-func (m *MockChildContext) ID() *go_reverse_rpc.ID {
+func (m *MockChildContext) ID() *reverse_rpc.ID {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ID")
-	ret0, _ := ret[0].(*go_reverse_rpc.ID)
+	ret0, _ := ret[0].(*reverse_rpc.ID)
 	return ret0
 }
 
@@ -98,7 +98,7 @@ func (mr *MockChildContextMockRecorder) PrometheusLabels() *gomock.Call {
 }
 
 // Reply mocks base method.
-func (m *MockChildContext) Reply(res *go_reverse_rpc.Response) bool {
+func (m *MockChildContext) Reply(res *reverse_rpc.Response) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Reply", res)
 	ret0, _ := ret[0].(bool)
@@ -177,10 +177,10 @@ func (mr *MockContextMockRecorder) Ctx() *gomock.Call {
 }
 
 // GetResponse mocks base method.
-func (m *MockContext) GetResponse() *go_reverse_rpc.Response {
+func (m *MockContext) GetResponse() *reverse_rpc.Response {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetResponse")
-	ret0, _ := ret[0].(*go_reverse_rpc.Response)
+	ret0, _ := ret[0].(*reverse_rpc.Response)
 	return ret0
 }
 
@@ -191,10 +191,10 @@ func (mr *MockContextMockRecorder) GetResponse() *gomock.Call {
 }
 
 // ID mocks base method.
-func (m *MockContext) ID() *go_reverse_rpc.ID {
+func (m *MockContext) ID() *reverse_rpc.ID {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ID")
-	ret0, _ := ret[0].(*go_reverse_rpc.ID)
+	ret0, _ := ret[0].(*reverse_rpc.ID)
 	return ret0
 }
 
@@ -233,7 +233,7 @@ func (mr *MockContextMockRecorder) PrometheusLabels() *gomock.Call {
 }
 
 // Reply mocks base method.
-func (m *MockContext) Reply(res *go_reverse_rpc.Response) bool {
+func (m *MockContext) Reply(res *reverse_rpc.Response) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Reply", res)
 	ret0, _ := ret[0].(bool)

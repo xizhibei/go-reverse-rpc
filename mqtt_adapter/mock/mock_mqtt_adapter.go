@@ -10,10 +10,10 @@
 package mock_mqtt_adapter
 
 import (
+	context "context"
 	reflect "reflect"
-	time "time"
 
-	paho_mqtt_golang "github.com/eclipse/paho.mqtt.golang"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	mqtt_adapter "github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -42,17 +42,17 @@ func (m *MockMQTTClientAdapter) EXPECT() *MockMQTTClientAdapterMockRecorder {
 }
 
 // Connect mocks base method.
-func (m *MockMQTTClientAdapter) Connect() error {
+func (m *MockMQTTClientAdapter) Connect(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Connect")
+	ret := m.ctrl.Call(m, "Connect", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Connect indicates an expected call of Connect.
-func (mr *MockMQTTClientAdapterMockRecorder) Connect() *gomock.Call {
+func (mr *MockMQTTClientAdapterMockRecorder) Connect(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Connect", reflect.TypeOf((*MockMQTTClientAdapter)(nil).Connect))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Connect", reflect.TypeOf((*MockMQTTClientAdapter)(nil).Connect), ctx)
 }
 
 // ConnectAndWaitForSuccess mocks base method.
@@ -91,11 +91,25 @@ func (mr *MockMQTTClientAdapterMockRecorder) EnsureConnected() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsureConnected", reflect.TypeOf((*MockMQTTClientAdapter)(nil).EnsureConnected))
 }
 
+// GetClientOptions mocks base method.
+func (m *MockMQTTClientAdapter) GetClientOptions() *mqtt.ClientOptions {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClientOptions")
+	ret0, _ := ret[0].(*mqtt.ClientOptions)
+	return ret0
+}
+
+// GetClientOptions indicates an expected call of GetClientOptions.
+func (mr *MockMQTTClientAdapterMockRecorder) GetClientOptions() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClientOptions", reflect.TypeOf((*MockMQTTClientAdapter)(nil).GetClientOptions))
+}
+
 // GetMqttClient mocks base method.
-func (m *MockMQTTClientAdapter) GetMqttClient() paho_mqtt_golang.Client {
+func (m *MockMQTTClientAdapter) GetMqttClient() mqtt.Client {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMqttClient")
-	ret0, _ := ret[0].(paho_mqtt_golang.Client)
+	ret0, _ := ret[0].(mqtt.Client)
 	return ret0
 }
 
@@ -195,128 +209,160 @@ func (mr *MockMQTTClientAdapterMockRecorder) OnConnectOnce(cb any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnConnectOnce", reflect.TypeOf((*MockMQTTClientAdapter)(nil).OnConnectOnce), cb)
 }
 
-// Publish mocks base method.
-func (m *MockMQTTClientAdapter) Publish(topic string, qos byte, payload any) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", topic, qos, payload)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Publish indicates an expected call of Publish.
-func (mr *MockMQTTClientAdapterMockRecorder) Publish(topic, qos, payload any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockMQTTClientAdapter)(nil).Publish), topic, qos, payload)
-}
-
 // PublishBytes mocks base method.
-func (m *MockMQTTClientAdapter) PublishBytes(topic string, qos byte, retained bool, data []byte) paho_mqtt_golang.Token {
+func (m *MockMQTTClientAdapter) PublishBytes(ctx context.Context, topic string, qos byte, retained bool, data []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PublishBytes", topic, qos, retained, data)
-	ret0, _ := ret[0].(paho_mqtt_golang.Token)
-	return ret0
+	m.ctrl.Call(m, "PublishBytes", ctx, topic, qos, retained, data)
 }
 
 // PublishBytes indicates an expected call of PublishBytes.
-func (mr *MockMQTTClientAdapterMockRecorder) PublishBytes(topic, qos, retained, data any) *gomock.Call {
+func (mr *MockMQTTClientAdapterMockRecorder) PublishBytes(ctx, topic, qos, retained, data any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishBytes", reflect.TypeOf((*MockMQTTClientAdapter)(nil).PublishBytes), topic, qos, retained, data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishBytes", reflect.TypeOf((*MockMQTTClientAdapter)(nil).PublishBytes), ctx, topic, qos, retained, data)
 }
 
-// PublishWait mocks base method.
-func (m *MockMQTTClientAdapter) PublishWait(topic string, qos byte, payload any) error {
+// PublishBytesWait mocks base method.
+func (m *MockMQTTClientAdapter) PublishBytesWait(ctx context.Context, topic string, qos byte, retained bool, data []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PublishWait", topic, qos, payload)
+	ret := m.ctrl.Call(m, "PublishBytesWait", ctx, topic, qos, retained, data)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// PublishWait indicates an expected call of PublishWait.
-func (mr *MockMQTTClientAdapterMockRecorder) PublishWait(topic, qos, payload any) *gomock.Call {
+// PublishBytesWait indicates an expected call of PublishBytesWait.
+func (mr *MockMQTTClientAdapterMockRecorder) PublishBytesWait(ctx, topic, qos, retained, data any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWait", reflect.TypeOf((*MockMQTTClientAdapter)(nil).PublishWait), topic, qos, payload)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishBytesWait", reflect.TypeOf((*MockMQTTClientAdapter)(nil).PublishBytesWait), ctx, topic, qos, retained, data)
 }
 
-// PublishWaitTimeout mocks base method.
-func (m *MockMQTTClientAdapter) PublishWaitTimeout(topic string, qos byte, timeout time.Duration, payload any) error {
+// PublishObject mocks base method.
+func (m *MockMQTTClientAdapter) PublishObject(ctx context.Context, topic string, qos byte, retained bool, payload any) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PublishWaitTimeout", topic, qos, timeout, payload)
+	ret := m.ctrl.Call(m, "PublishObject", ctx, topic, qos, retained, payload)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// PublishWaitTimeout indicates an expected call of PublishWaitTimeout.
-func (mr *MockMQTTClientAdapterMockRecorder) PublishWaitTimeout(topic, qos, timeout, payload any) *gomock.Call {
+// PublishObject indicates an expected call of PublishObject.
+func (mr *MockMQTTClientAdapterMockRecorder) PublishObject(ctx, topic, qos, retained, payload any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWaitTimeout", reflect.TypeOf((*MockMQTTClientAdapter)(nil).PublishWaitTimeout), topic, qos, timeout, payload)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishObject", reflect.TypeOf((*MockMQTTClientAdapter)(nil).PublishObject), ctx, topic, qos, retained, payload)
+}
+
+// PublishObjectWait mocks base method.
+func (m *MockMQTTClientAdapter) PublishObjectWait(ctx context.Context, topic string, qos byte, retained bool, payload any) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PublishObjectWait", ctx, topic, qos, retained, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PublishObjectWait indicates an expected call of PublishObjectWait.
+func (mr *MockMQTTClientAdapterMockRecorder) PublishObjectWait(ctx, topic, qos, retained, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishObjectWait", reflect.TypeOf((*MockMQTTClientAdapter)(nil).PublishObjectWait), ctx, topic, qos, retained, payload)
 }
 
 // Subscribe mocks base method.
-func (m *MockMQTTClientAdapter) Subscribe(topic string, qos byte, onMsg mqtt_adapter.MessageCallback) paho_mqtt_golang.Token {
+func (m *MockMQTTClientAdapter) Subscribe(ctx context.Context, topic string, qos byte, onMsg mqtt_adapter.MessageCallback) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Subscribe", topic, qos, onMsg)
-	ret0, _ := ret[0].(paho_mqtt_golang.Token)
-	return ret0
+	m.ctrl.Call(m, "Subscribe", ctx, topic, qos, onMsg)
 }
 
 // Subscribe indicates an expected call of Subscribe.
-func (mr *MockMQTTClientAdapterMockRecorder) Subscribe(topic, qos, onMsg any) *gomock.Call {
+func (mr *MockMQTTClientAdapterMockRecorder) Subscribe(ctx, topic, qos, onMsg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockMQTTClientAdapter)(nil).Subscribe), topic, qos, onMsg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockMQTTClientAdapter)(nil).Subscribe), ctx, topic, qos, onMsg)
 }
 
 // SubscribeMultiple mocks base method.
-func (m *MockMQTTClientAdapter) SubscribeMultiple(filters map[string]byte, onMsg mqtt_adapter.MessageCallback) paho_mqtt_golang.Token {
+func (m *MockMQTTClientAdapter) SubscribeMultiple(ctx context.Context, filters map[string]byte, onMsg mqtt_adapter.MessageCallback) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeMultiple", filters, onMsg)
-	ret0, _ := ret[0].(paho_mqtt_golang.Token)
-	return ret0
+	m.ctrl.Call(m, "SubscribeMultiple", ctx, filters, onMsg)
 }
 
 // SubscribeMultiple indicates an expected call of SubscribeMultiple.
-func (mr *MockMQTTClientAdapterMockRecorder) SubscribeMultiple(filters, onMsg any) *gomock.Call {
+func (mr *MockMQTTClientAdapterMockRecorder) SubscribeMultiple(ctx, filters, onMsg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeMultiple", reflect.TypeOf((*MockMQTTClientAdapter)(nil).SubscribeMultiple), filters, onMsg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeMultiple", reflect.TypeOf((*MockMQTTClientAdapter)(nil).SubscribeMultiple), ctx, filters, onMsg)
+}
+
+// SubscribeMultipleWait mocks base method.
+func (m *MockMQTTClientAdapter) SubscribeMultipleWait(ctx context.Context, filters map[string]byte, onMsg mqtt_adapter.MessageCallback) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeMultipleWait", ctx, filters, onMsg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubscribeMultipleWait indicates an expected call of SubscribeMultipleWait.
+func (mr *MockMQTTClientAdapterMockRecorder) SubscribeMultipleWait(ctx, filters, onMsg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeMultipleWait", reflect.TypeOf((*MockMQTTClientAdapter)(nil).SubscribeMultipleWait), ctx, filters, onMsg)
 }
 
 // SubscribeWait mocks base method.
-func (m *MockMQTTClientAdapter) SubscribeWait(topic string, qos byte, onMsg mqtt_adapter.MessageCallback) error {
+func (m *MockMQTTClientAdapter) SubscribeWait(ctx context.Context, topic string, qos byte, onMsg mqtt_adapter.MessageCallback) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeWait", topic, qos, onMsg)
+	ret := m.ctrl.Call(m, "SubscribeWait", ctx, topic, qos, onMsg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubscribeWait indicates an expected call of SubscribeWait.
-func (mr *MockMQTTClientAdapterMockRecorder) SubscribeWait(topic, qos, onMsg any) *gomock.Call {
+func (mr *MockMQTTClientAdapterMockRecorder) SubscribeWait(ctx, topic, qos, onMsg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeWait", reflect.TypeOf((*MockMQTTClientAdapter)(nil).SubscribeWait), topic, qos, onMsg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeWait", reflect.TypeOf((*MockMQTTClientAdapter)(nil).SubscribeWait), ctx, topic, qos, onMsg)
 }
 
 // Unsubscribe mocks base method.
-func (m *MockMQTTClientAdapter) Unsubscribe(topic string) error {
+func (m *MockMQTTClientAdapter) Unsubscribe(ctx context.Context, topic string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Unsubscribe", topic)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Unsubscribe", ctx, topic)
 }
 
 // Unsubscribe indicates an expected call of Unsubscribe.
-func (mr *MockMQTTClientAdapterMockRecorder) Unsubscribe(topic any) *gomock.Call {
+func (mr *MockMQTTClientAdapterMockRecorder) Unsubscribe(ctx, topic any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockMQTTClientAdapter)(nil).Unsubscribe), topic)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockMQTTClientAdapter)(nil).Unsubscribe), ctx, topic)
 }
 
 // UnsubscribeAll mocks base method.
-func (m *MockMQTTClientAdapter) UnsubscribeAll() error {
+func (m *MockMQTTClientAdapter) UnsubscribeAll(ctx context.Context) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnsubscribeAll")
+	m.ctrl.Call(m, "UnsubscribeAll", ctx)
+}
+
+// UnsubscribeAll indicates an expected call of UnsubscribeAll.
+func (mr *MockMQTTClientAdapterMockRecorder) UnsubscribeAll(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsubscribeAll", reflect.TypeOf((*MockMQTTClientAdapter)(nil).UnsubscribeAll), ctx)
+}
+
+// UnsubscribeAllWait mocks base method.
+func (m *MockMQTTClientAdapter) UnsubscribeAllWait(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnsubscribeAllWait", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UnsubscribeAll indicates an expected call of UnsubscribeAll.
-func (mr *MockMQTTClientAdapterMockRecorder) UnsubscribeAll() *gomock.Call {
+// UnsubscribeAllWait indicates an expected call of UnsubscribeAllWait.
+func (mr *MockMQTTClientAdapterMockRecorder) UnsubscribeAllWait(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsubscribeAll", reflect.TypeOf((*MockMQTTClientAdapter)(nil).UnsubscribeAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsubscribeAllWait", reflect.TypeOf((*MockMQTTClientAdapter)(nil).UnsubscribeAllWait), ctx)
+}
+
+// UnsubscribeWait mocks base method.
+func (m *MockMQTTClientAdapter) UnsubscribeWait(ctx context.Context, topic string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnsubscribeWait", ctx, topic)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnsubscribeWait indicates an expected call of UnsubscribeWait.
+func (mr *MockMQTTClientAdapterMockRecorder) UnsubscribeWait(ctx, topic any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsubscribeWait", reflect.TypeOf((*MockMQTTClientAdapter)(nil).UnsubscribeWait), ctx, topic)
 }

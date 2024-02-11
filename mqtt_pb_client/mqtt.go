@@ -80,7 +80,7 @@ func (s *Client) Close() error {
 // The qos parameter specifies the desired QoS level for the subscription.
 // The cb parameter is a callback function that will be called when a message is received on the subscribed topic.
 func (s *Client) Subscribe(topic string, qos byte, cb mqtt_adapter.MessageCallback) {
-	s.mqttClient.Subscribe(topic, qos, cb)
+	s.mqttClient.Subscribe(context.TODO(), topic, qos, cb)
 }
 
 func (s *Client) createRPCClient(deviceID string, encoding pb_encoding.ContentEncoding) (*rpc.Client, func(), error) {

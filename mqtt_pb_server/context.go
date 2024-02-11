@@ -19,11 +19,11 @@ var (
 // MQTTContext represents the context of an MQTT request.
 type MQTTContext struct {
 	req *RequestData
-	svc *Service
+	svc *MqttServer
 }
 
 // NewMQTTContext creates a new MQTTContext instance.
-func NewMQTTContext(req *RequestData, svc *Service) *MQTTContext {
+func NewMQTTContext(req *RequestData, svc *MqttServer) *MQTTContext {
 	ctx := MQTTContext{
 		req: req,
 		svc: svc,
@@ -64,8 +64,8 @@ type EncodingGetter interface {
 
 // PrometheusLabels returns the Prometheus labels of the MQTTContext.
 func (c *MQTTContext) PrometheusLabels() prometheus.Labels {
-	r := c.svc.iotClient.GetMqttClient().OptionsReader()
-	uri := r.Servers()[0]
+	r := c.svc.iotClient.GetClientOptions()
+	uri := r.Servers[0]
 	return prometheus.Labels{
 		"method": c.req.Method,
 		"host":   uri.Host,

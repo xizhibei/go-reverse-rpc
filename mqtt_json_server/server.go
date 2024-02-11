@@ -20,8 +20,8 @@ var (
 	ErrRetailedMessage = errors.New("[RRPC] reatain message is not allowed, please set retaind=false")
 )
 
-// Service represents a MQTT service.
-type Service struct {
+// MqttServer represents a MQTT service.
+type MqttServer struct {
 	*reverse_rpc.Server
 	iotClient mqtt_adapter.MQTTClientAdapter
 	log       *zap.SugaredLogger
@@ -31,12 +31,12 @@ type Service struct {
 	qos            byte
 }
 
-// New creates a new MQTT service with the provided options.
+// New creates a new MQTT server with the provided options.
 // It initializes an MQTT client with the given MQTT options and connects to the MQTT broker.
 // The function also sets up the necessary configurations for the reverse RPC server.
 // It returns a pointer to the created Service and an error if any.
-func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, validator *validator.Validate, options ...reverse_rpc.ServerOption) *Service {
-	s := Service{
+func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, validator *validator.Validate, options ...reverse_rpc.ServerOption) *MqttServer {
+	s := MqttServer{
 		Server:         reverse_rpc.NewServer(options...),
 		iotClient:      client,
 		subscribeTopic: subscribeTopic,
@@ -57,7 +57,7 @@ func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, validator
 
 // Close closes the MQTT service by disconnecting the IoT client.
 // It returns an error if there was a problem disconnecting the client.
-func (s *Service) Close() error {
+func (s *MqttServer) Close() error {
 	s.iotClient.Disconnect()
 	return nil
 }
@@ -118,22 +118,19 @@ type Response struct {
 	json_encoding.Response
 }
 
-func (s *Service) reply(res *Response) error {
+func (s *MqttServer) reply(res *Response) error {
 	data, err := json.Marshal(res.Response)
 	if err != nil {
 		return err
 	}
 	s.log.Infof("Response to topic %s, method %s size %d", res.Topic, res.Method, len(data))
-	tk := s.iotClient.PublishBytes(res.Topic, s.qos, false, data)
-	if tk.Error() != nil {
-		return tk.Error()
-	}
+	s.iotClient.PublishBytes(context.TODO(), res.Topic, s.qos, false, data)
 
 	return nil
 }
 
-func (s *Service) initReceive() error {
-	token := s.iotClient.Subscribe(s.subscribeTopic, s.qos, func(client mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
+func (s *MqttServer) initReceive() error {
+	s.iotClient.Subscribe(context.TODO(), s.subscribeTopic, s.qos, func(client mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
 		req := Request{
 			Topic: m.Topic(),
 		}
@@ -151,17 +148,17 @@ func (s *Service) initReceive() error {
 			return
 		}
 
-		s.log.Debugf("Request from topic %s, method %s", m.Topic, req.Method)
+		s.log.Debugf("Request from topic %s, method %s", m.Topic(), req.Method)
 
 		mqttCtx := NewMQTTContext(&req, s, s.validator)
 		c := reverse_rpc.NewRequestContext(context.Background(), mqttCtx)
 
 		s.Server.Call(c)
 	})
-	return token.Error()
+	return nil
 }
 
 // IsConnected returns a boolean value indicating whether the service is connected to the MQTT broker.
-func (s *Service) IsConnected() bool {
+func (s *MqttServer) IsConnected() bool {
 	return s.iotClient.IsConnected()
 }

@@ -20,8 +20,8 @@ var (
 	ErrUnknownContentEncoding = errors.New("[RRPC] unknown content encoding")
 )
 
-// Service represents a MQTT service.
-type Service struct {
+// MqttServer represents a MQTT service.
+type MqttServer struct {
 	*reverse_rpc.Server
 	iotClient mqtt_adapter.MQTTClientAdapter
 	codec     *pb_encoding.ProtobufServerCodec
@@ -32,8 +32,8 @@ type Service struct {
 
 // New creates a new Service instance with the provided MQTT client and options.
 // It returns a pointer to the Service and an error, if any.
-func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options ...reverse_rpc.ServerOption) *Service {
-	s := Service{
+func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options ...reverse_rpc.ServerOption) *MqttServer {
+	s := MqttServer{
 		Server:         reverse_rpc.NewServer(options...),
 		iotClient:      client,
 		subscribeTopic: subscribeTopic,
@@ -53,13 +53,13 @@ func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options .
 }
 
 // IsConnected returns a boolean value indicating whether the service is connected to the IoT client.
-func (s *Service) IsConnected() bool {
+func (s *MqttServer) IsConnected() bool {
 	return s.iotClient.IsConnected()
 }
 
 // Close closes the service by disconnecting the IoT client.
 // It returns an error if there was a problem disconnecting the client.
-func (s *Service) Close() error {
+func (s *MqttServer) Close() error {
 	s.iotClient.Disconnect()
 	return nil
 }
@@ -122,20 +122,20 @@ func (r *RequestData) GetReplyTopic() string {
 	return strings.Replace(r.Topic, "request", "response", 1)
 }
 
-func (s *Service) reply(res *ResponseData) error {
+func (s *MqttServer) reply(res *ResponseData) error {
 	if res.Status != reverse_rpc.RPCStatusOK {
-		s.log.Errorf("ResponseData error %#v", res)
+		s.log.Debugf("ResponseData error %#v", res)
 	}
 	data, err := s.codec.Marshal(&res.Response)
 	if err != nil {
 		return err
 	}
-	_ = s.iotClient.PublishBytes(res.Topic, reverse_rpc.DefaultQoS, false, data)
+	s.iotClient.PublishBytes(context.TODO(), res.Topic, reverse_rpc.DefaultQoS, false, data)
 	return nil
 }
 
-func (s *Service) initReceive() error {
-	token := s.iotClient.Subscribe(s.subscribeTopic, reverse_rpc.DefaultQoS, func(client mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
+func (s *MqttServer) initReceive() error {
+	s.iotClient.Subscribe(context.TODO(), s.subscribeTopic, reverse_rpc.DefaultQoS, func(client mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
 		s.log.Debugf("Request from json pb topic %s, method %s", m.Topic(), "Subscribe")
 		req := RequestData{
 			Topic: m.Topic(),
@@ -155,5 +155,5 @@ func (s *Service) initReceive() error {
 
 		go s.Server.Call(c)
 	})
-	return token.Error()
+	return nil
 }

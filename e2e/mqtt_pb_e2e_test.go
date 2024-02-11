@@ -23,7 +23,7 @@ import (
 
 type MQTTPBTestSuite struct {
 	suite.Suite
-	service *mqtt_pb_server.Service
+	service *mqtt_pb_server.MqttServer
 	client  *mqtt_pb_client.Client
 
 	topicPrefix string

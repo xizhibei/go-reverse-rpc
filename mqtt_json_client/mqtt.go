@@ -53,13 +53,13 @@ func (s *Client) Close() error {
 }
 
 func (s *Client) Subscribe(topic string, qos byte, cb mqtt_adapter.MessageCallback) {
-	s.mqttClient.Subscribe(topic, qos, cb)
+	s.mqttClient.Subscribe(context.TODO(), topic, qos, cb)
 }
 
-func (s *Client) createRPCClient(machineID string) (*rpc.Client, error) {
+func (s *Client) createRPCClient(targetId string) (*rpc.Client, error) {
 	id := uuid.NewString()
-	requestTopic := path.Join(s.topicPrefix, machineID, "request", id)
-	responseTopic := path.Join(s.topicPrefix, machineID, "response", id)
+	requestTopic := path.Join(s.topicPrefix, targetId, "request", id)
+	responseTopic := path.Join(s.topicPrefix, targetId, "response", id)
 	client, err := Dial(requestTopic, responseTopic, s.mqttClient, reverse_rpc.DefaultQoS)
 	if err != nil {
 		return nil, err
@@ -67,8 +67,8 @@ func (s *Client) createRPCClient(machineID string) (*rpc.Client, error) {
 	return client, nil
 }
 
-func (s *Client) Call(ctx context.Context, machineID, serviceMethod string, args interface{}, reply interface{}) error {
-	rpcClient, err := s.createRPCClient(machineID)
+func (s *Client) Call(ctx context.Context, targetId, serviceMethod string, args interface{}, reply interface{}) error {
+	rpcClient, err := s.createRPCClient(targetId)
 	if err != nil {
 		return err
 	}

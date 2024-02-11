@@ -11,13 +11,13 @@ import (
 // MQTTContext represents the context of an MQTT request.
 type MQTTContext struct {
 	req       *Request
-	service   *Service
+	service   *MqttServer
 	validator *validator.Validate
 }
 
 // NewMQTTContext creates a new MQTTContext with the given request, service, and validator.
 // It returns a pointer to the created MQTTContext.
-func NewMQTTContext(req *Request, service *Service, validator *validator.Validate) *MQTTContext {
+func NewMQTTContext(req *Request, service *MqttServer, validator *validator.Validate) *MQTTContext {
 	ctx := MQTTContext{
 		req:       req,
 		service:   service,
@@ -45,8 +45,8 @@ func (c *MQTTContext) Method() string {
 // PrometheusLabels returns the Prometheus labels for the MQTTContext.
 // It includes the method and host labels.
 func (c *MQTTContext) PrometheusLabels() prometheus.Labels {
-	r := c.service.iotClient.GetMqttClient().OptionsReader()
-	uri := r.Servers()[0]
+	r := c.service.iotClient.GetClientOptions()
+	uri := r.Servers[0]
 	return prometheus.Labels{
 		"method": c.req.Method,
 		"host":   uri.Host,

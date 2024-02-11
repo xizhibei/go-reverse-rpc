@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 
 	prometheus "github.com/prometheus/client_golang/prometheus"
-	go_reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -69,7 +69,7 @@ func (mr *MockReverseRPCMockRecorder) IsConnected() *gomock.Call {
 }
 
 // Register mocks base method.
-func (m *MockReverseRPC) Register(method string, hdl *go_reverse_rpc.Handler) {
+func (m *MockReverseRPC) Register(method string, hdl *reverse_rpc.Handler) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Register", method, hdl)
 }

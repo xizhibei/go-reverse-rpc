@@ -1,6 +1,7 @@
 package mqtt_adapter
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -16,7 +17,8 @@ import (
 
 // MQTTClientAdapterImpl represents an MQTT client.
 type MQTTClientAdapterImpl struct {
-	client mqtt.Client
+	client        mqtt.Client
+	clientOptions *ClientOptions
 
 	subscribeMap sync.Map
 
@@ -32,15 +34,6 @@ type MQTTClientAdapterImpl struct {
 
 	log *zap.SugaredLogger
 }
-
-// OnConnectCallback represents a callback function that is called when a connection is established.
-type OnConnectCallback func()
-
-// OnConnectLostCallback is a function type that represents a callback function
-// to be called when the connection to the MQTT broker is lost.
-// The callback function takes an error parameter that indicates the reason for
-// the connection loss.
-type OnConnectLostCallback func(err error)
 
 // NewTLSConfig creates a new TLS configuration with the provided PEM certificates.
 // The PEM certificates are used to import trusted certificates from CAfile.pem.
@@ -131,7 +124,13 @@ func New(uri, clientID string, options ...Option) (MQTTClientAdapter, error) {
 
 	if clientOptions.enableStatus {
 		client.OnConnect(func() {
-			client.PublishBytes(clientOptions.onlineTopic, 1, true, []byte(clientOptions.onlinePayload))
+			client.PublishBytes(
+				context.Background(),
+				clientOptions.onlineTopic,
+				1,
+				true,
+				[]byte(clientOptions.onlinePayload),
+			)
 		})
 	}
 
@@ -142,12 +141,18 @@ func New(uri, clientID string, options ...Option) (MQTTClientAdapter, error) {
 		mqtt.ERROR = stdlog.New(os.Stderr, "ERROR - ", stdlog.LstdFlags)
 	}
 
+	client.clientOptions = clientOptions
+
 	return &client, nil
 }
 
 // GetMqttClient returns the MQTT client associated with the Client instance.
 func (s *MQTTClientAdapterImpl) GetMqttClient() mqtt.Client {
 	return s.client
+}
+
+func (s *MQTTClientAdapterImpl) GetClientOptions() *mqtt.ClientOptions {
+	return s.clientOptions.ClientOptions
 }
 
 // OnConnectOnce registers a callback function to be executed once the MQTT client is connected.
@@ -224,13 +229,15 @@ func (s *MQTTClientAdapterImpl) OffConnectLost(idx int) {
 	delete(s.onConnectLostCallbaks, idx)
 }
 
-// Connect establishes a connection to the MQTT broker.
-// It returns an error if the connection fails.
-func (s *MQTTClientAdapterImpl) Connect() error {
-	if token := s.client.Connect(); token.Wait() && token.Error() != nil {
+func (s *MQTTClientAdapterImpl) Connect(ctx context.Context) error {
+	token := s.client.Connect()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-token.Done():
 		return token.Error()
 	}
-	return nil
 }
 
 // EnsureConnected ensures that the MQTT client is connected.
@@ -244,13 +251,14 @@ func (s *MQTTClientAdapterImpl) EnsureConnected() {
 // If the connection fails, it retries every 10 seconds until a successful connection is established.
 // The function stops retrying if the stopRetryConnect flag is set to true.
 func (s *MQTTClientAdapterImpl) ConnectAndWaitForSuccess() {
+	ctx := context.Background()
 	if !s.IsConnected() {
 		for !s.stopRetryConnect {
 			if s.IsConnected() {
 				s.log.Infof("mqtt is connected %s", s.printableURL)
 				return
 			}
-			err := s.Connect()
+			err := s.Connect(ctx)
 			if err != nil {
 				s.log.Errorf("Connect failed %s %v", s.printableURL, err)
 				time.Sleep(time.Second * 10)
@@ -282,23 +290,47 @@ func (s *MQTTClientAdapterImpl) IsConnected() bool {
 // The topic parameter specifies the topic to subscribe to.
 // The qos parameter specifies the desired QoS level for the subscription.
 // The onMsg parameter is a callback function that will be called when a message is received.
-// The callback function should have the following signature: func(client *Client, message mqtt.Message).
-// The function returns a mqtt.Token that can be used to track the status of the subscription.
-// If an error occurs during the subscription, it will be logged and returned as part of the token.
-func (s *MQTTClientAdapterImpl) Subscribe(topic string, qos byte, onMsg MessageCallback) mqtt.Token {
+// The callback function receives the MQTT client adapter instance and the received message as parameters.
+// The subscription is stored in the subscribeMap for later reference.
+func (s *MQTTClientAdapterImpl) Subscribe(ctx context.Context, topic string, qos byte, onMsg MessageCallback) {
 	s.log.Debugf("Subscribe topic=%s qos=%d", topic, qos)
 	callback := func(c mqtt.Client, m mqtt.Message) {
 		onMsg(s, m)
 	}
 
-	token := s.client.Subscribe(topic, qos, callback)
-	if err := token.Error(); err != nil {
-		s.log.With("f", "Subscribe").Errorf("%v", err)
+	defer s.subscribeMap.Store(topic, true)
+
+	s.client.Subscribe(topic, qos, callback)
+}
+
+// SubscribeWait subscribes to a topic with the specified quality of service (QoS) level
+// and waits for incoming messages. It registers a callback function to handle each received message.
+// The function returns an error if the context is canceled or if there is an error while subscribing.
+//
+// Parameters:
+// - ctx: The context.Context object for cancellation.
+// - topic: The topic to subscribe to.
+// - qos: The quality of service level for the subscription.
+// - onMsg: The callback function to handle incoming messages.
+//
+// Returns:
+// - error: An error if the context is canceled or if there is an error while subscribing.
+func (s *MQTTClientAdapterImpl) SubscribeWait(ctx context.Context, topic string, qos byte, onMsg MessageCallback) error {
+	s.log.Debugf("Subscribe topic=%s qos=%d", topic, qos)
+
+	callback := func(c mqtt.Client, m mqtt.Message) {
+		onMsg(s, m)
 	}
 
-	s.subscribeMap.Store(topic, true)
+	defer s.subscribeMap.Store(topic, true)
 
-	return token
+	token := s.client.Subscribe(topic, qos, callback)
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-token.Done():
+		return token.Error()
+	}
 }
 
 // SubscribeMultiple subscribes to multiple MQTT topics with their respective QoS levels.
@@ -324,81 +356,143 @@ func (s *MQTTClientAdapterImpl) Subscribe(topic string, qos byte, onMsg MessageC
 //	onMsg := func(client *Client, message mqtt.Message) {
 //	  // Handle incoming message
 //	}
-//
-//	token := client.SubscribeMultiple(filters, onMsg)
-//	if err := token.Error(); err != nil {
-//	  // Handle subscription error
-//	}
-func (s *MQTTClientAdapterImpl) SubscribeMultiple(filters map[string]byte, onMsg MessageCallback) mqtt.Token {
+func (s *MQTTClientAdapterImpl) SubscribeMultiple(ctx context.Context, filters map[string]byte, onMsg MessageCallback) {
 	s.log.Debugf("SubscribeMultiple topic=%v", filters)
 	callback := func(c mqtt.Client, m mqtt.Message) {
 		onMsg(s, m)
 	}
 
-	token := s.client.SubscribeMultiple(filters, callback)
-	if err := token.Error(); err != nil {
-		s.log.With("f", "Subscribe").Errorf("%v", err)
-	}
+	s.client.SubscribeMultiple(filters, callback)
 
 	for topic := range filters {
 		s.subscribeMap.Store(topic, true)
 	}
-
-	return token
 }
 
-// SubscribeWait subscribes to a topic with the specified QoS level and waits for the subscription to complete.
-// It also registers a callback function to handle incoming messages on the subscribed topic.
-// If there is an error during the subscription process, it returns the error.
-func (s *MQTTClientAdapterImpl) SubscribeWait(topic string, qos byte, onMsg MessageCallback) error {
-	if token := s.Subscribe(topic, qos, onMsg); token.Wait() && token.Error() != nil {
-		return token.Error()
+// SubscribeMultipleWait subscribes to multiple MQTT topics and waits for incoming messages.
+// It takes a context.Context object for cancellation, a map of topic filters and their QoS levels,
+// and a MessageCallback function to handle incoming messages.
+// The MessageCallback function is called with the MQTT client adapter and the received message as parameters.
+// This function returns an error if the subscription or message handling encounters an error,
+// or if the context is canceled before the subscription is completed.
+func (s *MQTTClientAdapterImpl) SubscribeMultipleWait(ctx context.Context, filters map[string]byte, onMsg MessageCallback) error {
+	callback := func(c mqtt.Client, m mqtt.Message) {
+		onMsg(s, m)
 	}
 
-	return nil
+	defer func() {
+		for topic := range filters {
+			s.subscribeMap.Store(topic, true)
+		}
+	}()
+
+	token := s.client.SubscribeMultiple(filters, callback)
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-token.Done():
+		return token.Error()
+	}
 }
 
 // UnsubscribeAll unsubscribes from all topics that the client is currently subscribed to.
 // It retrieves the list of topics from the subscribeMap and unsubscribes from each topic.
 // After unsubscribing, it removes the topics from the subscribeMap.
-// If any error occurs during the unsubscribe process, it returns the error.
-// Otherwise, it returns nil.
-func (s *MQTTClientAdapterImpl) UnsubscribeAll() error {
+func (s *MQTTClientAdapterImpl) UnsubscribeAll(ctx context.Context) {
 	topics := []string{}
 	s.subscribeMap.Range(func(key interface{}, value interface{}) bool {
 		topics = append(topics, key.(string))
 		return true
 	})
 
-	if token := s.client.Unsubscribe(topics...); token.Wait() && token.Error() != nil {
-		return token.Error()
-	}
-	for _, topic := range topics {
-		s.subscribeMap.Delete(topic)
-	}
-	return nil
+	defer func() {
+		for _, topic := range topics {
+			s.subscribeMap.Delete(topic)
+		}
+	}()
+
+	s.client.Unsubscribe(topics...)
 }
 
-// Unsubscribe unsubscribes from a topic.
-// It removes the topic from the subscribeMap and sends an unsubscribe request to the MQTT broker.
-// If there is an error during the unsubscribe process, it returns the error; otherwise, it returns nil.
-func (s *MQTTClientAdapterImpl) Unsubscribe(topic string) error {
+// UnsubscribeAllWait unsubscribes from all topics that have been previously subscribed to.
+// It waits for the operation to complete or for the context to be canceled.
+// If the context is canceled before the operation completes, it returns the context error.
+// If the operation completes with an error, it returns the error.
+func (s *MQTTClientAdapterImpl) UnsubscribeAllWait(ctx context.Context) error {
+	topics := []string{}
+	s.subscribeMap.Range(func(key interface{}, value interface{}) bool {
+		topics = append(topics, key.(string))
+		return true
+	})
+
+	defer func() {
+		for _, topic := range topics {
+			s.subscribeMap.Delete(topic)
+		}
+	}()
+
+	token := s.client.Unsubscribe(topics...)
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-token.Done():
+		return token.Error()
+	}
+}
+
+// Unsubscribe unsubscribes from the specified MQTT topic.
+// It takes a context.Context and the topic string as parameters.
+// This method logs the topic being unsubscribed and removes it from the subscribeMap.
+// Finally, it calls the Unsubscribe method of the MQTT client to unsubscribe from the topic.
+func (s *MQTTClientAdapterImpl) Unsubscribe(ctx context.Context, topic string) {
 	s.log.Debugf("Unsubscribe topic=%s", topic)
-	s.subscribeMap.Delete(topic)
-	if token := s.client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
+
+	defer s.subscribeMap.Delete(topic)
+
+	s.client.Unsubscribe(topic)
+}
+
+// UnsubscribeWait unsubscribes from a topic and waits for the operation to complete or the context to be canceled.
+// It returns an error if the operation fails or the context is canceled.
+func (s *MQTTClientAdapterImpl) UnsubscribeWait(ctx context.Context, topic string) error {
+	defer s.subscribeMap.Delete(topic)
+
+	token := s.client.Unsubscribe(topic)
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-token.Done():
 		return token.Error()
 	}
-
-	return nil
 }
 
-// PublishBytes publishes a message with the given topic, quality of service (qos), retained flag, and data.
-// It returns an mqtt.Token representing the publish operation.
-func (s *MQTTClientAdapterImpl) PublishBytes(topic string, qos byte, retained bool, data []byte) mqtt.Token {
-	return s.client.Publish(topic, qos, retained, data)
+// PublishBytes publishes the given data as a byte array to the specified MQTT topic.
+// It takes the context, topic, quality of service (QoS), retained flag, and data as parameters.
+// The QoS determines the level of assurance for message delivery.
+// The retained flag indicates whether the message should be retained by the broker.
+// This function is used to publish data using the MQTT client.
+func (s *MQTTClientAdapterImpl) PublishBytes(ctx context.Context, topic string, qos byte, retained bool, data []byte) {
+	s.client.Publish(topic, qos, retained, data)
 }
 
-func (s *MQTTClientAdapterImpl) publishObject(topic string, qos byte, payload interface{}) (mqtt.Token, error) {
+// PublishBytesWait publishes the given data as bytes to the specified topic with the specified quality of service (QoS),
+// and waits for the operation to complete or the context to be canceled.
+// It returns an error if the operation fails or if the context is canceled.
+func (s *MQTTClientAdapterImpl) PublishBytesWait(ctx context.Context, topic string, qos byte, retained bool, data []byte) error {
+	token := s.client.Publish(topic, qos, retained, data)
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-token.Done():
+		return token.Error()
+	}
+}
+
+func (s *MQTTClientAdapterImpl) publishObject(ctx context.Context, topic string, qos byte, payload any) (mqtt.Token, error) {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -407,45 +501,30 @@ func (s *MQTTClientAdapterImpl) publishObject(topic string, qos byte, payload in
 	return s.client.Publish(topic, qos, false, data), nil
 }
 
-// Publish publishes a message to the specified topic with the given quality of service (QoS) level and payload.
-// It returns an error if the message fails to be published.
-func (s *MQTTClientAdapterImpl) Publish(topic string, qos byte, payload interface{}) error {
-	token, err := s.publishObject(topic, qos, payload)
+// PublishObject publishes an object to the specified MQTT topic with the given quality of service (QoS),
+// retained flag, and payload. It returns an error if the publishing operation fails.
+func (s *MQTTClientAdapterImpl) PublishObject(ctx context.Context, topic string, qos byte, retained bool, payload any) error {
+	_, err := s.publishObject(ctx, topic, qos, payload)
 	if err != nil {
 		return err
 	}
-	return token.Error()
-}
-
-// PublishWait publishes a message to the specified topic with the given quality of service (qos) and payload.
-// It waits for the message to be published and returns an error if there was a problem.
-func (s *MQTTClientAdapterImpl) PublishWait(topic string, qos byte, payload interface{}) error {
-	token, err := s.publishObject(topic, qos, payload)
-	if err != nil {
-		return err
-	}
-
-	s.log.Debugf("Publish topic=%s payload=%v", topic, payload)
-	if token.Wait() && token.Error() != nil {
-		return token.Error()
-	}
-
 	return nil
 }
 
-// PublishWaitTimeout publishes a message to the MQTT broker with the specified topic, quality of service (QoS),
-// timeout duration, and payload. It waits for the completion of the publish operation with the given timeout.
-// If the operation times out or encounters an error, it returns the corresponding error.
-func (s *MQTTClientAdapterImpl) PublishWaitTimeout(topic string, qos byte, timeout time.Duration, payload interface{}) error {
-	token, err := s.publishObject(topic, qos, payload)
+// PublishObjectWait publishes an object to the specified MQTT topic with the given quality of service (QoS),
+// retention flag, and payload. It waits for the operation to complete or for the context to be canceled.
+// If the context is canceled before the operation completes, it returns the context error.
+// If the operation completes successfully, it returns nil.
+// If there is an error during the operation, it returns the error from the MQTT token.
+func (s *MQTTClientAdapterImpl) PublishObjectWait(ctx context.Context, topic string, qos byte, retained bool, payload any) error {
+	token, err := s.publishObject(ctx, topic, qos, payload)
 	if err != nil {
 		return err
 	}
-
-	s.log.Debugf("Publish topic=%s payload=%v", topic, payload)
-	if token.WaitTimeout(timeout) && token.Error() != nil {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-token.Done():
 		return token.Error()
 	}
-
-	return nil
 }

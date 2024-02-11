@@ -22,7 +22,7 @@ import (
 
 type MQTTJsonTestSuite struct {
 	suite.Suite
-	service *mqtt_json_server.Service
+	service *mqtt_json_server.MqttServer
 	client  *mqtt_json_client.Client
 
 	topicPrefix string

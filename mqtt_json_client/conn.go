@@ -2,6 +2,7 @@ package mqtt_json_client
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/rpc"
 
@@ -34,15 +35,12 @@ func newRPCConn(requestTopic, responseTopic string, c mqtt_adapter.MQTTClientAda
 	}
 
 	c.OnConnect(func() {
-		tk := c.Subscribe(responseTopic, qos, func(c mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
+		c.Subscribe(context.TODO(), responseTopic, qos, func(c mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
 			conn.log.Infof("Receive data from %s len=%d", m.Topic(), len(m.Payload()))
 			conn.bytesReader = bytes.NewReader(m.Payload())
 			conn.ready = true
 			conn.readyChan <- struct{}{}
 		})
-		if tk.Error() != nil {
-			conn.log.Errorf("%v", tk.Error())
-		}
 	})
 
 	return &conn, nil
@@ -69,7 +67,7 @@ func (c *rpcConn) Read(data []byte) (int, error) {
 // Finally, it returns the length of the data written and a nil error.
 func (c *rpcConn) Write(data []byte) (int, error) {
 	c.log.Infof("Send data to %s len=%d", c.requestTopic, len(data))
-	_ = c.c.PublishBytes(c.requestTopic, c.qos, false, data)
+	c.c.PublishBytes(context.TODO(), c.requestTopic, c.qos, false, data)
 	return len(data), nil
 }
 
@@ -77,7 +75,8 @@ func (c *rpcConn) Write(data []byte) (int, error) {
 // It returns an error if there was a problem unsubscribing from the topic.
 func (c *rpcConn) Close() error {
 	close(c.readyChan)
-	return c.c.Unsubscribe(c.responseTopic)
+	c.c.Unsubscribe(context.Background(), c.responseTopic)
+	return nil
 }
 
 // Dial establishes a connection to the MQTT broker and returns an RPC client.
