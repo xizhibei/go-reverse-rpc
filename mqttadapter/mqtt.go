@@ -2,8 +2,6 @@ package mqttadapter
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	stdlog "log"
 	"net/url"
@@ -35,38 +33,6 @@ type MQTTClientAdapterImpl struct {
 	log *zap.SugaredLogger
 }
 
-// NewTLSConfig creates a new TLS configuration with the provided PEM certificates.
-// The PEM certificates are used to import trusted certificates from CAfile.pem.
-// The function returns a *tls.Config with the desired TLS properties, including
-// the RootCAs used to verify the server certificate, the ClientAuth setting,
-// the ClientCAs used to validate the client certificate, the InsecureSkipVerify
-// option to skip server certificate verification, and the Certificates sent by
-// the client to the server.
-func NewTLSConfig(pemCerts []byte) *tls.Config {
-	// Import trusted certificates from CAfile.pem.
-	// Alternatively, manually add CA certificates to default openssl CA bundle.
-	certpool := x509.NewCertPool()
-
-	certpool.AppendCertsFromPEM(pemCerts)
-
-	// Create tls.Config with desired tls properties
-	return &tls.Config{
-		// RootCAs = certs used to verify server cert.
-		RootCAs: certpool,
-		// ClientAuth = whether to request cert from server.
-		// Since the server is set up for SSL, this happens
-		// anyways.
-		ClientAuth: tls.NoClientCert,
-		// ClientCAs = certs used to validate client cert.
-		ClientCAs: nil,
-		// InsecureSkipVerify = verify that cert contents
-		// match server. IP matches what is in cert etc.
-		InsecureSkipVerify: true,
-		// Certificates = list of certs client sends to server.
-		// Certificates: []tls.Certificate{cert},
-	}
-}
-
 // New creates a new MQTT client with the specified URI, client ID, and options.
 // The URI should be in the format "scheme://host:port", where scheme can be "tcp" or "ssl".
 // The client ID is a unique identifier for the client.
@@ -94,7 +60,6 @@ func New(uri, clientID string, options ...Option) (MQTTClientAdapter, error) {
 		AddBroker(uri).
 		SetClientID(clientID).
 		SetKeepAlive(60 * time.Second).
-		SetTLSConfig(&tls.Config{}).
 		SetDefaultPublishHandler(func(c mqtt.Client, m mqtt.Message) {
 			log.Infof("DefaultPublishHandler %s %s", m.Topic(), string(m.Payload()))
 		}).
