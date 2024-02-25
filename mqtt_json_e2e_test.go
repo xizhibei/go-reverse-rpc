@@ -1,4 +1,4 @@
-package mqtt_e2e_test
+package reverse_rpc_test
 
 import (
 	"context"
