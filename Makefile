@@ -1,13 +1,12 @@
+PKG_LIST=$(shell go list ./... | grep -v /test | grep -v /mock)
+
 .PHONY: generate
 generate:
 	go generate ./...
 
-go-pkg-list:
-	export PKG_LIST="$(shell go list ./... | grep -v /vendor/)"
-
 .PHONY: lint
 lint:
-	@go lint $(shell go list ./... | grep -v /vendor/)
+	@golint $(PKG_LIST)
 
 .PHONY: clean
 clean:
@@ -19,11 +18,11 @@ deps:
 
 .PHONY: test
 test:
-	@go test $(shell go list ./... | grep -v /vendor/)
+	@go test $(PKG_LIST)
 
 .PHONY: cover
 cover:
-	@go test -cover $(shell go list ./... | grep -v /vendor/) -coverprofile=coverage.out
+	@go test -cover $(PKG_LIST) -coverprofile=coverage.out
 
 .PHONY: cover-report
 cover-report: cover
@@ -31,7 +30,7 @@ cover-report: cover
 
 .PHONY: mocks
 mocks:
-	go generate $(shell go list ./... | grep -v /vendor/)
+	go generate $(PKG_LIST)
 
 .PHONY: protoc
 protoc:
