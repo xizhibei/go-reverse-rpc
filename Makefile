@@ -34,15 +34,15 @@ mocks:
 
 .PHONY: protoc
 protoc:
-	find pb_encoding -type f  -name *.proto  \
+	find mqttpb -type f  -name *.proto  \
 	| xargs -I {} \
 	protoc \
-	-I pb_encoding \
+	-I mqttpb \
 	--go_out=. \
 	{}
-	find pb_encoding/test -type f  -name *.proto  \
+	find mqttpb/test -type f  -name *.proto  \
 	| xargs -I {} \
 	protoc \
-	-I pb_encoding/test \
+	-I mqttpb/test \
 	--go_out=. \
 	{}

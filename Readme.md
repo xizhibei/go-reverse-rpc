@@ -39,16 +39,16 @@ go get github.com/xizhibei/go-reverse-rpc@latest
 #### Server create
 ```go
 import (
-    "github.com/xizhibei/go-reverse-rpc/mqtt_pb_server"
-    "github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
+    "github.com/xizhibei/go-reverse-rpc/mqttpb"
+    "github.com/xizhibei/go-reverse-rpc/mqttadapter"
 )
 
-mqttClient, err := mqtt_adapter.New("tcp://localhost", "123456-server")
+mqttClient, err := mqttadapter.New("tcp://localhost", "123456-server")
 if err != nil {
     panic(err)
 }
 
-server := mqtt_pb_server.New(
+server := mqttpb.NewServer(
     mqttClient,
     path.Join("example", "123456", "request/+"),
 )
@@ -57,20 +57,19 @@ server := mqtt_pb_server.New(
 #### Client create
 ```go
 import (
-    "github.com/xizhibei/go-reverse-rpc/mqtt_pb_client"
-    "github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
-    "github.com/xizhibei/go-reverse-rpc/pb_encoding"
+    "github.com/xizhibei/go-reverse-rpc/mqttpb"
+    "github.com/xizhibei/go-reverse-rpc/mqttadapter"
 )
 
-mqttClient, err := mqtt_adapter.New("tcp://localhost", "123456-client")
+mqttClient, err := mqttadapter.New("tcp://localhost", "123456-client")
 if err != nil {
     panic(err)
 }
 
-client := mqtt_pb_client.New(
+client := mqttpb.New(
     mqttClient,
     "example",
-    pb_encoding.ContentEncoding_GZIP,
+    mqttpb.ContentEncoding_GZIP,
 )
 ```
 

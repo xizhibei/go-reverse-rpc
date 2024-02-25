@@ -204,9 +204,7 @@ func (s *Server) Call(c Context) {
 	}
 }
 
-// Labels associated with the response event.
-// Duration of the response event.
-// The response object.
+// AfterResponseEvent represents an event that is emitted after a response is sent.
 type AfterResponseEvent struct {
 	Labels   prometheus.Labels
 	Duration time.Duration

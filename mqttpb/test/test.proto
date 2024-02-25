@@ -1,0 +1,16 @@
+syntax = "proto3";
+package rrpc.test.v1;
+
+option go_package = "mqttpb/test";
+
+import "google/protobuf/descriptor.proto";
+
+message TestRequestBody {
+	uint64 id = 1;
+	string str = 2;
+}
+
+message TestResponseBody {
+	uint64 id = 1;
+	string str = 2;
+}
