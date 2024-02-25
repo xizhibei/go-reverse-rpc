@@ -1,4 +1,4 @@
-package reverse_rpc_test
+package reverserpc_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_json_client"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_json_server"
@@ -96,12 +96,12 @@ func (suite *MQTTJsonTestSuite) TestNormalCall() {
 	}
 	method := "test_normal_call"
 
-	suite.service.Register(method, &reverse_rpc.Handler{
-		Method: func(c reverse_rpc.Context) {
+	suite.service.Register(method, &rrpc.Handler{
+		Method: func(c rrpc.Context) {
 			var req Req
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+				c.ReplyError(rrpc.RPCStatusClientError, err)
 				return
 			}
 
@@ -128,19 +128,19 @@ func (suite *MQTTJsonTestSuite) TestErrCall() {
 	}
 	method := "test_error_call"
 
-	suite.service.Register(method, &reverse_rpc.Handler{
-		Method: func(c reverse_rpc.Context) {
+	suite.service.Register(method, &rrpc.Handler{
+		Method: func(c rrpc.Context) {
 			var req Req
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+				c.ReplyError(rrpc.RPCStatusClientError, err)
 				return
 			}
 
 			suite.Equal(req.A, reqParams.A)
 			suite.Equal(req.B, reqParams.B)
 
-			c.ReplyError(reverse_rpc.RPCStatusClientError, fmt.Errorf("response error"))
+			c.ReplyError(rrpc.RPCStatusClientError, fmt.Errorf("response error"))
 		},
 		Timeout: 5 * time.Second,
 	})
@@ -157,12 +157,12 @@ func (suite *MQTTJsonTestSuite) TestTimeoutCall() {
 	}
 	method := "test_timeout_call"
 
-	suite.service.Register(method, &reverse_rpc.Handler{
-		Method: func(c reverse_rpc.Context) {
+	suite.service.Register(method, &rrpc.Handler{
+		Method: func(c rrpc.Context) {
 			var req Req
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+				c.ReplyError(rrpc.RPCStatusClientError, err)
 				return
 			}
 
@@ -188,12 +188,12 @@ func (suite *MQTTJsonTestSuite) TestPanicCall() {
 	}
 	method := "test_panic_call"
 
-	suite.service.Register(method, &reverse_rpc.Handler{
-		Method: func(c reverse_rpc.Context) {
+	suite.service.Register(method, &rrpc.Handler{
+		Method: func(c rrpc.Context) {
 			var req Req
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+				c.ReplyError(rrpc.RPCStatusClientError, err)
 				return
 			}
 

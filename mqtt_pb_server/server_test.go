@@ -12,7 +12,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	mock_mqtt_adapter "github.com/xizhibei/go-reverse-rpc/mqtt_adapter/mock"
 	mock_mqtt_client "github.com/xizhibei/go-reverse-rpc/mqtt_adapter/mock/mqtt"
@@ -142,15 +142,15 @@ func (suite *MQTTPBServerTestSuite) TestReceiveCall() {
 
 	var wg sync.WaitGroup
 	{
-		suite.server.Register("test", &reverse_rpc.Handler{
+		suite.server.Register("test", &rrpc.Handler{
 			Timeout: 5 * time.Second,
-			Method: func(c reverse_rpc.Context) {
+			Method: func(c rrpc.Context) {
 				defer wg.Done()
 
 				req := testpb.TestRequestBody{}
 				err := c.Bind(&req)
 				if err != nil {
-					c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+					c.ReplyError(rrpc.RPCStatusClientError, err)
 					return
 				}
 
@@ -179,22 +179,22 @@ func (suite *MQTTPBServerTestSuite) TestReceiveCall() {
 		})
 	}
 	{
-		suite.server.Register("test-fail", &reverse_rpc.Handler{
+		suite.server.Register("test-fail", &rrpc.Handler{
 			Timeout: 5 * time.Second,
-			Method: func(c reverse_rpc.Context) {
+			Method: func(c rrpc.Context) {
 				defer wg.Done()
 
 				req := testpb.TestRequestBody{}
 				err := c.Bind(&req)
 				if err != nil {
-					c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+					c.ReplyError(rrpc.RPCStatusClientError, err)
 					return
 				}
 
 				suite.Equal(req.Id, reqBody.Id)
 				suite.Equal(req.Str, reqBody.Str)
 
-				c.ReplyError(reverse_rpc.RPCStatusServerError, fmt.Errorf("test error"))
+				c.ReplyError(rrpc.RPCStatusServerError, fmt.Errorf("test error"))
 			},
 		})
 
@@ -216,9 +216,9 @@ func (suite *MQTTPBServerTestSuite) TestReceiveCall() {
 		})
 	}
 	{
-		suite.server.Register("test-panic", &reverse_rpc.Handler{
+		suite.server.Register("test-panic", &rrpc.Handler{
 			Timeout: 5 * time.Second,
-			Method: func(c reverse_rpc.Context) {
+			Method: func(c rrpc.Context) {
 				wg.Done()
 
 				panic(fmt.Errorf("panic error"))

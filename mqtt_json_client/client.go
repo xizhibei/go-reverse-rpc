@@ -7,7 +7,7 @@ import (
 	"net/rpc"
 	"sync"
 
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/json_encoding"
 )
 
@@ -77,7 +77,7 @@ func (c *rpcClientCodec) ReadResponseHeader(r *rpc.Response) error {
 	if c.resp.Data == nil {
 		r.Error = "unspecified error"
 	}
-	if c.resp.Status != reverse_rpc.RPCStatusOK {
+	if c.resp.Status != rrpc.RPCStatusOK {
 		var data map[string]interface{}
 		err := json.Unmarshal(c.resp.Data, &data)
 		if err != nil {

@@ -13,7 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/json_encoding"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	mock_mqtt_adapter "github.com/xizhibei/go-reverse-rpc/mqtt_adapter/mock"
@@ -146,15 +146,15 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 
 	var wg sync.WaitGroup
 	{
-		suite.server.Register("test", &reverse_rpc.Handler{
+		suite.server.Register("test", &rrpc.Handler{
 			Timeout: 5 * time.Second,
-			Method: func(c reverse_rpc.Context) {
+			Method: func(c rrpc.Context) {
 				defer wg.Done()
 
 				req := ReqBody{}
 				err := c.Bind(&req)
 				if err != nil {
-					c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+					c.ReplyError(rrpc.RPCStatusClientError, err)
 					return
 				}
 
@@ -180,22 +180,22 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 		})
 	}
 	{
-		suite.server.Register("test-fail", &reverse_rpc.Handler{
+		suite.server.Register("test-fail", &rrpc.Handler{
 			Timeout: 5 * time.Second,
-			Method: func(c reverse_rpc.Context) {
+			Method: func(c rrpc.Context) {
 				defer wg.Done()
 
 				req := ReqBody{}
 				err := c.Bind(&req)
 				if err != nil {
-					c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+					c.ReplyError(rrpc.RPCStatusClientError, err)
 					return
 				}
 
 				suite.Equal(req.A, reqBody.A)
 				suite.Equal(req.B, reqBody.B)
 
-				c.ReplyError(reverse_rpc.RPCStatusServerError, fmt.Errorf("test error"))
+				c.ReplyError(rrpc.RPCStatusServerError, fmt.Errorf("test error"))
 			},
 		})
 
@@ -213,9 +213,9 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 		})
 	}
 	{
-		suite.server.Register("test-panic", &reverse_rpc.Handler{
+		suite.server.Register("test-panic", &rrpc.Handler{
 			Timeout: 5 * time.Second,
-			Method: func(c reverse_rpc.Context) {
+			Method: func(c rrpc.Context) {
 				wg.Done()
 
 				panic(fmt.Errorf("panic error"))

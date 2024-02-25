@@ -1,4 +1,4 @@
-package reverse_rpc_test
+package reverserpc_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_pb_client"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_pb_server"
@@ -100,12 +100,12 @@ func (suite *MQTTPBTestSuite) TestNormalCall() {
 
 	method := "test_normal_call"
 
-	suite.service.Register(method, &reverse_rpc.Handler{
-		Method: func(c reverse_rpc.Context) {
+	suite.service.Register(method, &rrpc.Handler{
+		Method: func(c rrpc.Context) {
 			var req testpb.TestRequestBody
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+				c.ReplyError(rrpc.RPCStatusClientError, err)
 				return
 			}
 
@@ -148,19 +148,19 @@ func (suite *MQTTPBTestSuite) TestErrCall() {
 
 	method := "test_err_call"
 
-	suite.service.Register(method, &reverse_rpc.Handler{
-		Method: func(c reverse_rpc.Context) {
+	suite.service.Register(method, &rrpc.Handler{
+		Method: func(c rrpc.Context) {
 			var req testpb.TestRequestBody
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+				c.ReplyError(rrpc.RPCStatusClientError, err)
 				return
 			}
 
 			suite.Equal(req.Id, reqParams.Id)
 			suite.Equal(req.Str, reqParams.Str)
 
-			c.ReplyError(reverse_rpc.RPCStatusClientError, fmt.Errorf("response error"))
+			c.ReplyError(rrpc.RPCStatusClientError, fmt.Errorf("response error"))
 		},
 		Timeout: 5 * time.Second,
 	})
@@ -178,12 +178,12 @@ func (suite *MQTTPBTestSuite) TestTimeoutCall() {
 
 	method := "test_timeout_call"
 
-	suite.service.Register(method, &reverse_rpc.Handler{
-		Method: func(c reverse_rpc.Context) {
+	suite.service.Register(method, &rrpc.Handler{
+		Method: func(c rrpc.Context) {
 			var req testpb.TestRequestBody
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+				c.ReplyError(rrpc.RPCStatusClientError, err)
 				return
 			}
 
@@ -210,12 +210,12 @@ func (suite *MQTTPBTestSuite) TestPanicCall() {
 
 	method := "test_panic_call"
 
-	suite.service.Register(method, &reverse_rpc.Handler{
-		Method: func(c reverse_rpc.Context) {
+	suite.service.Register(method, &rrpc.Handler{
+		Method: func(c rrpc.Context) {
 			var req testpb.TestRequestBody
 			err := c.Bind(&req)
 			if err != nil {
-				c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+				c.ReplyError(rrpc.RPCStatusClientError, err)
 				return
 			}
 

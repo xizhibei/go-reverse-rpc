@@ -76,12 +76,12 @@ client := mqtt_pb_client.New(
 
 #### Register handler on server side
 ```go
-server.Register(method, &reverse_rpc.Handler{
-    Method: func(c reverse_rpc.Context) {
+server.Register(method, &reverserpc.Handler{
+    Method: func(c reverserpc.Context) {
         var req Req
         err := c.Bind(&req)
         if err != nil {
-            c.ReplyError(reverse_rpc.RPCStatusClientError, err)
+            c.ReplyError(reverserpc.RPCStatusClientError, err)
             return
         }
 

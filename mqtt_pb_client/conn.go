@@ -85,7 +85,7 @@ func (c *rpcConn) Close() error {
 
 // Dial establishes a connection to the MQTT broker and returns a new RPC client.
 // It takes the request topic, reply topic, MQTT client, and quality of service (QoS) as parameters.
-// The function creates a new connection using NewConn and returns a new RPC client using reverse_rpc_pb.NewClient.
+// The function creates a new connection using NewConn and returns a new RPC client using reverserpc_pb.NewClient.
 // If an error occurs during the connection establishment, it is returned along with a nil client.
 func Dial(reqTopic, replyTopic string, c mqtt_adapter.MQTTClientAdapter, qos byte) (*rpc.Client, error) {
 	conn, err := NewConn(reqTopic, replyTopic, c, qos)

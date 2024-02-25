@@ -7,7 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	"go.uber.org/zap"
 )
@@ -60,7 +60,7 @@ func (s *Client) createRPCClient(targetId string) (*rpc.Client, error) {
 	id := uuid.NewString()
 	requestTopic := path.Join(s.topicPrefix, targetId, "request", id)
 	responseTopic := path.Join(s.topicPrefix, targetId, "response", id)
-	client, err := Dial(requestTopic, responseTopic, s.mqttClient, reverse_rpc.DefaultQoS)
+	client, err := Dial(requestTopic, responseTopic, s.mqttClient, rrpc.DefaultQoS)
 	if err != nil {
 		return nil, err
 	}

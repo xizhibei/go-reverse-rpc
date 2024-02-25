@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/json_encoding"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 
@@ -22,7 +22,7 @@ var (
 
 // MqttServer represents a MQTT service.
 type MqttServer struct {
-	*reverse_rpc.Server
+	*rrpc.Server
 	iotClient mqtt_adapter.MQTTClientAdapter
 	log       *zap.SugaredLogger
 	validator *validator.Validate
@@ -35,9 +35,9 @@ type MqttServer struct {
 // It initializes an MQTT client with the given MQTT options and connects to the MQTT broker.
 // The function also sets up the necessary configurations for the reverse RPC server.
 // It returns a pointer to the created Service and an error if any.
-func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, validator *validator.Validate, options ...reverse_rpc.ServerOption) *MqttServer {
+func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, validator *validator.Validate, options ...rrpc.ServerOption) *MqttServer {
 	s := MqttServer{
-		Server:         reverse_rpc.NewServer(options...),
+		Server:         rrpc.NewServer(options...),
 		iotClient:      client,
 		subscribeTopic: subscribeTopic,
 		log:            zap.S().With("module", "rrpc.mqtt_json_server"),
@@ -92,7 +92,7 @@ func (r *Request) GetResponse() *Response {
 // The response object is returned.
 func (r *Request) MakeOKResponse(x interface{}) *Response {
 	res := r.GetResponse()
-	res.Status = reverse_rpc.RPCStatusOK
+	res.Status = rrpc.RPCStatusOK
 	data, _ := json.Marshal(x)
 
 	res.Data = data
@@ -151,7 +151,7 @@ func (s *MqttServer) initReceive() error {
 		s.log.Debugf("Request from topic %s, method %s", m.Topic(), req.Method)
 
 		mqttCtx := NewMQTTContext(&req, s, s.validator)
-		c := reverse_rpc.NewRequestContext(context.Background(), mqttCtx)
+		c := rrpc.NewRequestContext(context.Background(), mqttCtx)
 
 		s.Server.Call(c)
 	})

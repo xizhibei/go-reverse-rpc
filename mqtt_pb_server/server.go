@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqtt_adapter"
 	"github.com/xizhibei/go-reverse-rpc/pb_encoding"
 
@@ -22,7 +22,7 @@ var (
 
 // MqttServer represents a MQTT service.
 type MqttServer struct {
-	*reverse_rpc.Server
+	*rrpc.Server
 	iotClient mqtt_adapter.MQTTClientAdapter
 	codec     *pb_encoding.ProtobufServerCodec
 	log       *zap.SugaredLogger
@@ -32,9 +32,9 @@ type MqttServer struct {
 
 // New creates a new Service instance with the provided MQTT client and options.
 // It returns a pointer to the Service and an error, if any.
-func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options ...reverse_rpc.ServerOption) *MqttServer {
+func New(client mqtt_adapter.MQTTClientAdapter, subscribeTopic string, options ...rrpc.ServerOption) *MqttServer {
 	s := MqttServer{
-		Server:         reverse_rpc.NewServer(options...),
+		Server:         rrpc.NewServer(options...),
 		iotClient:      client,
 		subscribeTopic: subscribeTopic,
 		codec:          pb_encoding.NewProtobufServerCodec(),
@@ -94,7 +94,7 @@ func (r *RequestData) GetResponse() *ResponseData {
 // If an error occurs during marshaling, it returns nil.
 func (r *RequestData) MakeOKResponse(data proto.Message) *ResponseData {
 	res := r.GetResponse()
-	res.Status = reverse_rpc.RPCStatusOK
+	res.Status = rrpc.RPCStatusOK
 	d, err := proto.Marshal(data)
 	if err != nil {
 		return nil
@@ -123,19 +123,19 @@ func (r *RequestData) GetReplyTopic() string {
 }
 
 func (s *MqttServer) reply(res *ResponseData) error {
-	if res.Status != reverse_rpc.RPCStatusOK {
+	if res.Status != rrpc.RPCStatusOK {
 		s.log.Debugf("ResponseData error %#v", res)
 	}
 	data, err := s.codec.Marshal(&res.Response)
 	if err != nil {
 		return err
 	}
-	s.iotClient.PublishBytes(context.TODO(), res.Topic, reverse_rpc.DefaultQoS, false, data)
+	s.iotClient.PublishBytes(context.TODO(), res.Topic, rrpc.DefaultQoS, false, data)
 	return nil
 }
 
 func (s *MqttServer) initReceive() error {
-	s.iotClient.Subscribe(context.TODO(), s.subscribeTopic, reverse_rpc.DefaultQoS, func(client mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
+	s.iotClient.Subscribe(context.TODO(), s.subscribeTopic, rrpc.DefaultQoS, func(client mqtt_adapter.MQTTClientAdapter, m mqtt_adapter.Message) {
 		s.log.Debugf("Request from json pb topic %s, method %s", m.Topic(), "Subscribe")
 		req := RequestData{
 			Topic: m.Topic(),
@@ -151,7 +151,7 @@ func (s *MqttServer) initReceive() error {
 		s.log.Debugf("Request from pb  topic %s, method %s", m.Topic(), req.Method)
 
 		mqttCtx := NewMQTTContext(&req, s)
-		c := reverse_rpc.NewRequestContext(context.Background(), mqttCtx)
+		c := rrpc.NewRequestContext(context.Background(), mqttCtx)
 
 		go s.Server.Call(c)
 	})

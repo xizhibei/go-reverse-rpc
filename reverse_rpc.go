@@ -1,4 +1,4 @@
-package reverse_rpc
+package reverserpc
 
 import "github.com/prometheus/client_golang/prometheus"
 

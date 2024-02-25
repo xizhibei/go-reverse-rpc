@@ -1,4 +1,4 @@
-package reverse_rpc
+package reverserpc
 
 const (
 	RPCStatusOK             = 200

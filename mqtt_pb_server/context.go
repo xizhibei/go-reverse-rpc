@@ -5,7 +5,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/pb_encoding"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -33,8 +33,8 @@ func NewMQTTContext(req *RequestData, svc *MqttServer) *MQTTContext {
 }
 
 // ID returns the ID of the MQTTContext.
-func (c *MQTTContext) ID() *reverse_rpc.ID {
-	return &reverse_rpc.ID{Num: c.req.Id}
+func (c *MQTTContext) ID() *rrpc.ID {
+	return &rrpc.ID{Num: c.req.Id}
 }
 
 // Method returns the method of the MQTTContext.
@@ -92,7 +92,7 @@ func (c *MQTTContext) Bind(request interface{}) error {
 }
 
 // Reply sends the response back to the client.
-func (c *MQTTContext) Reply(res *reverse_rpc.Response) bool {
+func (c *MQTTContext) Reply(res *rrpc.Response) bool {
 	if res.Error != nil {
 		_ = c.svc.reply(c.req.MakeErrResponse(res.Status, res.Error))
 		return true

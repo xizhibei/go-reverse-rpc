@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/prometheus/client_golang/prometheus"
-	reverse_rpc "github.com/xizhibei/go-reverse-rpc"
+	rrpc "github.com/xizhibei/go-reverse-rpc"
 )
 
 // MQTTContext represents the context of an MQTT request.
@@ -27,8 +27,8 @@ func NewMQTTContext(req *Request, service *MqttServer, validator *validator.Vali
 }
 
 // ID returns the ID of the MQTTContext.
-func (c *MQTTContext) ID() *reverse_rpc.ID {
-	return &reverse_rpc.ID{Num: c.req.ID}
+func (c *MQTTContext) ID() *rrpc.ID {
+	return &rrpc.ID{Num: c.req.ID}
 }
 
 // ReplyDesc returns the reply topic for the MQTTContext.
@@ -73,7 +73,7 @@ func (c *MQTTContext) Bind(request interface{}) error {
 // If the response has an error, it sends an error response.
 // Otherwise, it sends an OK response with the result.
 // It returns true to indicate that the response was sent successfully.
-func (c *MQTTContext) Reply(res *reverse_rpc.Response) bool {
+func (c *MQTTContext) Reply(res *rrpc.Response) bool {
 	if res.Error != nil {
 		_ = c.service.reply(c.req.MakeErrResponse(res.Status, res.Error))
 		return true

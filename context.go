@@ -1,4 +1,4 @@
-package reverse_rpc
+package reverserpc
 
 //go:generate mockgen -source=context.go -destination=mock/mock_context.go
 
