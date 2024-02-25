@@ -16,50 +16,19 @@ import (
 	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqttadapter"
 	mock_mqttadapter "github.com/xizhibei/go-reverse-rpc/mqttadapter/mock"
-	mock_mqtt_client "github.com/xizhibei/go-reverse-rpc/mqttadapter/mock/mqtt"
+	mock_mqtt "github.com/xizhibei/go-reverse-rpc/mqttadapter/mock/mqtt"
 	"github.com/xizhibei/go-reverse-rpc/mqttjson"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
-// type message struct {
-// 	duplicate bool
-// 	qos       byte
-// 	retained  bool
-// 	topic     string
-// 	messageID uint16
-// 	payload   []byte
-// 	once      sync.Once
-// 	ack       func()
-// }
-
-// func (m *message) Duplicate() bool {
-// 	return m.duplicate
-// }
-
-// func (m *message) Qos() byte {
-// 	return m.qos
-// }
-
-// func (m *message) Retained() bool {
-// 	return m.retained
-// }
-
-// func (m *message) Topic() string {
-// 	return m.topic
-// }
-
-// func (m *message) MessageID() uint16 {
-// 	return m.messageID
-// }
-
-// func (m *message) Payload() []byte {
-// 	return m.payload
-// }
-
-// func (m *message) Ack() {
-// 	m.once.Do(m.ack)
-// }
+func NewMockMessage(ctrl *gomock.Controller, payload []byte, topic string) mqttadapter.Message {
+	m := mock_mqtt.NewMockMessage(ctrl)
+	m.EXPECT().Payload().Return(payload).AnyTimes()
+	m.EXPECT().Topic().Return(topic).AnyTimes()
+	m.EXPECT().Retained().Return(false).AnyTimes()
+	return m
+}
 
 type ReqBody struct {
 	A string `json:"a"`
@@ -69,8 +38,9 @@ type ReqBody struct {
 type MQTTJsonServerTestSuite struct {
 	suite.Suite
 	server           *mqttjson.Server
+	mockCtrl         *gomock.Controller
 	mqttClient       *mock_mqttadapter.MockMQTTClientAdapter
-	originMqttClient *mock_mqtt_client.MockClient
+	originMqttClient *mock_mqtt.MockClient
 
 	topicPrefix string
 	deviceId    string
@@ -85,9 +55,9 @@ func (suite *MQTTJsonServerTestSuite) SetupSuite() {
 
 	suite.topicPrefix = "test/example"
 	suite.deviceId = uuid.NewString()
-	ctrl := gomock.NewController(suite.T())
-	suite.mqttClient = mock_mqttadapter.NewMockMQTTClientAdapter(ctrl)
-	suite.originMqttClient = mock_mqtt_client.NewMockClient(ctrl)
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mqttClient = mock_mqttadapter.NewMockMQTTClientAdapter(suite.mockCtrl)
+	suite.originMqttClient = mock_mqtt.NewMockClient(suite.mockCtrl)
 }
 
 func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
@@ -173,10 +143,7 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 		suite.NoError(err)
 
 		wg.Add(1)
-		onSubCallback(suite.mqttClient, &message{
-			payload: reqBytes,
-			topic:   path.Join(suite.topicPrefix, suite.deviceId, "request/1"),
-		})
+		onSubCallback(suite.mqttClient, NewMockMessage(suite.mockCtrl, reqBytes, path.Join(suite.topicPrefix, suite.deviceId, "request/1")))
 	}
 	{
 		suite.server.Register("test-fail", &rrpc.Handler{
@@ -206,10 +173,7 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 		reqBytes, err := json.Marshal(req)
 		suite.NoError(err)
 		wg.Add(1)
-		onSubCallback(suite.mqttClient, &message{
-			payload: reqBytes,
-			topic:   path.Join(suite.topicPrefix, suite.deviceId, "request/2"),
-		})
+		onSubCallback(suite.mqttClient, NewMockMessage(suite.mockCtrl, reqBytes, path.Join(suite.topicPrefix, suite.deviceId, "request/2")))
 	}
 	{
 		suite.server.Register("test-panic", &rrpc.Handler{
@@ -229,10 +193,7 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 		reqBytes, err := json.Marshal(req)
 		suite.NoError(err)
 		wg.Add(1)
-		onSubCallback(suite.mqttClient, &message{
-			payload: reqBytes,
-			topic:   path.Join(suite.topicPrefix, suite.deviceId, "request/3"),
-		})
+		onSubCallback(suite.mqttClient, NewMockMessage(suite.mockCtrl, reqBytes, path.Join(suite.topicPrefix, suite.deviceId, "request/3")))
 	}
 	wg.Wait()
 

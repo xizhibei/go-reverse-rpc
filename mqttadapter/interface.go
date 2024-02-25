@@ -1,7 +1,7 @@
 package mqttadapter
 
 //go:generate mockgen -source=interface.go -destination=mock/mock_mqttadapter.go
-//go:generate mockgen -package mock_mqtt -destination=mock/mqtt/mock_mqtt_client.go github.com/eclipse/paho.mqtt.golang Client,Token
+//go:generate mockgen -package mock_mqtt -destination=mock/mqtt/mock_mqtt_client.go github.com/eclipse/paho.mqtt.golang Client,Token,Message
 
 import (
 	"context"

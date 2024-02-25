@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqttadapter"
 
@@ -13,10 +14,10 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-// var (
-// 	// ErrUnknownContentEncoding is an error indicating an unknown content encoding.
-// 	ErrUnknownContentEncoding = errors.New("[RRPC] unknown content encoding")
-// )
+var (
+	// ErrRetailedMessage is an error indicating that retain message is not allowed.
+	ErrRetailedMessage = errors.New("[RRPC] reatain message is not allowed, please set retaind=false")
+)
 
 // Server represents a MQTT service.
 type Server struct {
@@ -137,6 +138,12 @@ func (s *Server) initReceive() error {
 		s.log.Debugf("Request from json pb topic %s, method %s", m.Topic(), "Subscribe")
 		req := RequestData{
 			Topic: m.Topic(),
+		}
+
+		if m.Retained() {
+			s.log.Errorf("Retained message, ignore")
+			_ = s.reply(req.MakeErrResponse(400, ErrRetailedMessage))
+			return
 		}
 
 		err := s.codec.Unmarshal(m.Payload(), &req.Request)

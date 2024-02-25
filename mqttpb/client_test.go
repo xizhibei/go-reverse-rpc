@@ -4,7 +4,6 @@ import (
 	"context"
 	"path"
 	"reflect"
-	"sync"
 	"testing"
 	"time"
 
@@ -19,48 +18,10 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-type message struct {
-	duplicate bool
-	qos       byte
-	retained  bool
-	topic     string
-	messageID uint16
-	payload   []byte
-	once      sync.Once
-	ack       func()
-}
-
-func (m *message) Duplicate() bool {
-	return m.duplicate
-}
-
-func (m *message) Qos() byte {
-	return m.qos
-}
-
-func (m *message) Retained() bool {
-	return m.retained
-}
-
-func (m *message) Topic() string {
-	return m.topic
-}
-
-func (m *message) MessageID() uint16 {
-	return m.messageID
-}
-
-func (m *message) Payload() []byte {
-	return m.payload
-}
-
-func (m *message) Ack() {
-	m.once.Do(m.ack)
-}
-
 type MQTTPBClientTestSuite struct {
 	suite.Suite
 	client     *mqttpb.Client
+	mockCtrl   *gomock.Controller
 	mqttClient *mock_mqttadapter.MockMQTTClientAdapter
 
 	topicPrefix string
@@ -70,8 +31,8 @@ type MQTTPBClientTestSuite struct {
 func (suite *MQTTPBClientTestSuite) SetupSuite() {
 	suite.topicPrefix = "test/example"
 	suite.deviceId = uuid.NewString()
-	ctrl := gomock.NewController(suite.T())
-	suite.mqttClient = mock_mqttadapter.NewMockMQTTClientAdapter(ctrl)
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mqttClient = mock_mqttadapter.NewMockMQTTClientAdapter(suite.mockCtrl)
 	suite.mqttClient.EXPECT().
 		EnsureConnected()
 	suite.client = mqttpb.NewClient(
@@ -153,10 +114,7 @@ func (suite *MQTTPBClientTestSuite) TestCall() {
 		}
 		resBytes, _ := proto.Marshal(&res)
 
-		onSubCallback(suite.mqttClient, &message{
-			payload: resBytes,
-			topic:   path.Join(suite.topicPrefix, suite.deviceId, "response/test"),
-		})
+		onSubCallback(suite.mqttClient, NewMockMessage(suite.mockCtrl, resBytes, path.Join(suite.topicPrefix, suite.deviceId, "request/test")))
 	}()
 
 	ctx := context.Background()
