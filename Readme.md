@@ -75,12 +75,16 @@ client := mqttpb.New(
 
 #### Register handler on server side
 ```go
-server.Register(method, &reverserpc.Handler{
-    Method: func(c reverserpc.Context) {
+import (
+    rrpc "github.com/xizhibei/go-reverse-rpc"
+)
+
+server.Register(method, &rrpc.Handler{
+    Method: func(c rrpc.Context) {
         var req Req
         err := c.Bind(&req)
         if err != nil {
-            c.ReplyError(reverserpc.RPCStatusClientError, err)
+            c.ReplyError(rrpc.RPCStatusClientError, err)
             return
         }
 
