@@ -10,14 +10,14 @@ import (
 
 // MQTTContext represents the context of an MQTT request.
 type MQTTContext struct {
-	req       *request
+	req       *RequestData
 	service   *Server
 	validator *validator.Validate
 }
 
 // NewMQTTContext creates a new MQTTContext with the given request, service, and validator.
 // It returns a pointer to the created MQTTContext.
-func NewMQTTContext(req *request, service *Server, validator *validator.Validate) *MQTTContext {
+func NewMQTTContext(req *RequestData, service *Server, validator *validator.Validate) *MQTTContext {
 	ctx := MQTTContext{
 		req:       req,
 		service:   service,

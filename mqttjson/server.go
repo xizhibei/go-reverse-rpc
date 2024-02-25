@@ -61,22 +61,23 @@ func (s *Server) Close() error {
 	return nil
 }
 
-type request struct {
+// RequestData represents a request message for a request.
+type RequestData struct {
 	Topic string
 	Request
 }
 
 // ReplyTopic returns the topic for the response message corresponding to the request.
 // It replaces the word "request" with "response" in the original topic.
-func (r *request) ReplyTopic() string {
+func (r *RequestData) ReplyTopic() string {
 	return strings.ReplaceAll(r.Topic, "request", "response")
 }
 
 // GetResponse returns the response object for the request.
 // It creates a new Response object with the reply topic and sets the ID and Method fields.
-func (r *request) GetResponse() *response {
+func (r *RequestData) GetResponse() *ResponseData {
 	replyTopic := r.ReplyTopic()
-	return &response{
+	return &ResponseData{
 		Topic: replyTopic,
 		Response: Response{
 			ID:     r.ID,
@@ -88,7 +89,7 @@ func (r *request) GetResponse() *response {
 // MakeOKResponse creates a successful response with status code 200 and the provided data.
 // It marshals the data to JSON format and sets it as the response data.
 // The response object is returned.
-func (r *request) MakeOKResponse(x interface{}) *response {
+func (r *RequestData) MakeOKResponse(x interface{}) *ResponseData {
 	res := r.GetResponse()
 	res.Status = rrpc.RPCStatusOK
 	data, _ := json.Marshal(x)
@@ -99,7 +100,7 @@ func (r *request) MakeOKResponse(x interface{}) *response {
 
 // MakeErrResponse creates an error response with the specified status code and error message.
 // It returns a pointer to a Response object.
-func (r *request) MakeErrResponse(status int, err error) *response {
+func (r *RequestData) MakeErrResponse(status int, err error) *ResponseData {
 	res := r.GetResponse()
 	res.Status = status
 	data, _ := json.Marshal(map[string]string{
@@ -110,12 +111,13 @@ func (r *request) MakeErrResponse(status int, err error) *response {
 	return res
 }
 
-type response struct {
+// ResponseData represents a response message for a request.
+type ResponseData struct {
 	Topic string
 	Response
 }
 
-func (s *Server) reply(res *response) error {
+func (s *Server) reply(res *ResponseData) error {
 	data, err := json.Marshal(res.Response)
 	if err != nil {
 		return err
@@ -128,7 +130,7 @@ func (s *Server) reply(res *response) error {
 
 func (s *Server) initReceive() error {
 	s.iotClient.Subscribe(context.TODO(), s.subscribeTopic, s.qos, func(client mqttadapter.MQTTClientAdapter, m mqttadapter.Message) {
-		req := request{
+		req := RequestData{
 			Topic: m.Topic(),
 		}
 
