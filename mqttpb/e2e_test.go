@@ -60,6 +60,7 @@ func (suite *MQTTPBTestSuite) SetupSuite() {
 	service := mqttpb.NewServer(
 		iotServer,
 		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
+		rrpc.WithLimiter(1, 100),
 	)
 	suite.service = service
 
@@ -73,9 +74,6 @@ func (suite *MQTTPBTestSuite) SetupSuite() {
 		suite.topicPrefix,
 		mqttpb.ContentEncoding_GZIP,
 	)
-	if err != nil {
-		panic(err)
-	}
 	suite.client = client
 
 	time.Sleep(500 * time.Millisecond)

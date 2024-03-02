@@ -61,6 +61,7 @@ func (suite *MQTTJsonTestSuite) SetupSuite() {
 		iotServer,
 		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
 		validator.New(),
+		rrpc.WithLimiter(1, 100),
 	)
 	suite.service = service
 
