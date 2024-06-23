@@ -86,7 +86,8 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 
 	suite.server = mqttjson.NewServer(
 		suite.mqttClient,
-		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
+		suite.topicPrefix,
+		suite.deviceId,
 		validator.New(),
 	)
 

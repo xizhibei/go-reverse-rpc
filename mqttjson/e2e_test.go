@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"testing"
 	"time"
 
@@ -59,7 +58,8 @@ func (suite *MQTTJsonTestSuite) SetupSuite() {
 
 	service := mqttjson.NewServer(
 		iotServer,
-		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
+		suite.topicPrefix,
+		suite.deviceId,
 		validator.New(),
 		rrpc.WithLimiter(1, 100),
 	)

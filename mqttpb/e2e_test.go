@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"testing"
 	"time"
 
@@ -59,7 +58,8 @@ func (suite *MQTTPBTestSuite) SetupSuite() {
 
 	service := mqttpb.NewServer(
 		iotServer,
-		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
+		suite.topicPrefix,
+		suite.deviceId,
 		rrpc.WithLimiter(1, 100),
 	)
 	suite.service = service

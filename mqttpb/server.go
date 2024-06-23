@@ -2,6 +2,7 @@ package mqttpb
 
 import (
 	"context"
+	"path"
 	"reflect"
 	"strings"
 
@@ -31,11 +32,11 @@ type Server struct {
 
 // NewServer creates a new Service instance with the provided MQTT client and options.
 // It returns a pointer to the Service and an error, if any.
-func NewServer(client mqttadapter.MQTTClientAdapter, subscribeTopic string, options ...rrpc.ServerOption) *Server {
+func NewServer(client mqttadapter.MQTTClientAdapter, prefix, deviceId string, options ...rrpc.ServerOption) *Server {
 	s := Server{
 		Server:         rrpc.NewServer(options...),
 		iotClient:      client,
-		subscribeTopic: subscribeTopic,
+		subscribeTopic: path.Join(prefix, deviceId, "request/+"),
 		codec:          NewProtobufServerCodec(),
 		log:            zap.S().With("module", "rrpc.mqttpbserver"),
 	}

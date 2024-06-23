@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -34,11 +35,11 @@ type Server struct {
 // It initializes an MQTT client with the given MQTT options and connects to the MQTT broker.
 // The function also sets up the necessary configurations for the reverse RPC server.
 // It returns a pointer to the created Service and an error if any.
-func NewServer(client mqttadapter.MQTTClientAdapter, subscribeTopic string, validator *validator.Validate, options ...rrpc.ServerOption) *Server {
+func NewServer(client mqttadapter.MQTTClientAdapter, prefix, deviceId string, validator *validator.Validate, options ...rrpc.ServerOption) *Server {
 	s := Server{
 		Server:         rrpc.NewServer(options...),
 		iotClient:      client,
-		subscribeTopic: subscribeTopic,
+		subscribeTopic: path.Join(prefix, deviceId, "request/+"),
 		log:            zap.S().With("module", "rrpc.mqttjsonserver"),
 		validator:      validator,
 	}

@@ -83,7 +83,8 @@ func (suite *MQTTPBServerTestSuite) TestReceiveCall() {
 
 	suite.server = mqttpb.NewServer(
 		suite.mqttClient,
-		path.Join(suite.topicPrefix, suite.deviceId, "request/+"),
+		suite.topicPrefix,
+		suite.deviceId,
 	)
 
 	suite.mqttClient.EXPECT().

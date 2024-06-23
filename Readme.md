@@ -46,7 +46,8 @@ if err != nil {
 
 server := mqttpb.NewServer(
     mqttClient,
-    path.Join("example-prefix", "device-123456", "request/+"),
+    "example-prefix",
+    "device-123456",
 )
 ```
 
