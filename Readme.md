@@ -39,14 +39,14 @@ import (
     "github.com/xizhibei/go-reverse-rpc/mqttadapter"
 )
 
-mqttClient, err := mqttadapter.New("tcp://localhost", "123456-server")
+mqttClient, err := mqttadapter.New("tcp://localhost", "client-id-123456-server")
 if err != nil {
     panic(err)
 }
 
 server := mqttpb.NewServer(
     mqttClient,
-    path.Join("example", "123456", "request/+"),
+    path.Join("example-prefix", "device-123456", "request/+"),
 )
 ```
 
@@ -57,14 +57,14 @@ import (
     "github.com/xizhibei/go-reverse-rpc/mqttadapter"
 )
 
-mqttClient, err := mqttadapter.New("tcp://localhost", "123456-client")
+mqttClient, err := mqttadapter.New("tcp://localhost", "client-id-123456-client")
 if err != nil {
     panic(err)
 }
 
 client := mqttpb.New(
     mqttClient,
-    "example",
+    "example-prefix",
     mqttpb.ContentEncoding_GZIP,
 )
 ```
@@ -75,7 +75,7 @@ import (
     rrpc "github.com/xizhibei/go-reverse-rpc"
 )
 
-server.Register(method, &rrpc.Handler{
+server.Register("example-method", &rrpc.Handler{
     Method: func(c rrpc.Context) {
         var req Req
         err := c.Bind(&req)
@@ -95,7 +95,18 @@ server.Register(method, &rrpc.Handler{
 #### Call on client side
 ```go
 var res Req
-err := client.Call(context.Background(), suite.deviceId, method, &reqParams, &res)
+err := client.Call(context.Background(), "device-123456", "example-method", &reqParams, &res)
+```
+
+#### Server create options
+
+```go
+rrpc.WithServerName(name string) // Used to set the name of the server. For monitoring purposes, metrics labels will use this name.
+rrpc.WithLogResponse(logResponse bool) // Used to enable or disable logging of response.
+rrpc.WithLimiter(d time.Duration, count int) // Used to set the limiter duration and count for the server.
+rrpc.WithLimiterReject() // Used to allow the server to reject requests when the limiter is full. This is default behavior.
+rrpc.WithLimiterWait() // Used to allow the server to wait for available resources instead of rejecting requests when the limiter is full.
+rrpc.WithWorkerNum(count int) // Used to set the number of workers for the server.
 ```
 
 ## License
