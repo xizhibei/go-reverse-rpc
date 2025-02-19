@@ -1,6 +1,7 @@
 package mqttpb
 
 import (
+	"context"
 	"io"
 	"net/rpc"
 	"reflect"
@@ -8,6 +9,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	rrpc "github.com/xizhibei/go-reverse-rpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -29,6 +32,7 @@ var (
 type RPCClientCodec struct {
 	conn     io.ReadWriteCloser
 	encoding ContentEncoding
+	ctx      context.Context
 
 	request  Request
 	response Response
@@ -67,6 +71,11 @@ func (c *RPCClientCodec) SetEncoding(encoding ContentEncoding) {
 	c.encoding = encoding
 }
 
+// SetContext sets the context for the codec
+func (c *RPCClientCodec) SetContext(ctx context.Context) {
+	c.ctx = ctx
+}
+
 // WriteRequest writes the RPC request to the connection.
 // It encodes the request body using protobuf and the specified content encoding.
 func (c *RPCClientCodec) WriteRequest(r *rpc.Request, param interface{}) error {
@@ -90,6 +99,19 @@ func (c *RPCClientCodec) WriteRequest(r *rpc.Request, param interface{}) error {
 	c.request.Body = &anypb.Any{
 		TypeUrl: reflect.TypeOf(m).String(),
 		Value:   value,
+	}
+
+	// Inject trace context into request metadata
+	if c.ctx != nil {
+
+		// Initialize metadata map if nil
+		if c.request.Metadata == nil {
+			c.request.Metadata = make(map[string]string)
+		}
+
+		propagator := otel.GetTextMapPropagator()
+		carrier := propagation.MapCarrier(c.request.Metadata)
+		propagator.Inject(c.ctx, carrier)
 	}
 
 	body, err := c.codec.Marshal(&c.request)
@@ -122,6 +144,13 @@ func (c *RPCClientCodec) ReadResponseHeader(r *rpc.Response) error {
 	err = c.codec.Unmarshal(body, &c.response)
 	if err != nil {
 		return err
+	}
+
+	// Extract trace context from response metadata
+	if c.ctx != nil && c.response.Metadata != nil {
+		propagator := otel.GetTextMapPropagator()
+		carrier := propagation.MapCarrier(c.response.Metadata)
+		c.ctx = propagator.Extract(c.ctx, carrier)
 	}
 
 	c.mutex.Lock()

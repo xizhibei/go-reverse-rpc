@@ -18,6 +18,7 @@ import (
 	mock_mqtt "github.com/xizhibei/go-reverse-rpc/mqttadapter/mock/mqtt"
 	"github.com/xizhibei/go-reverse-rpc/mqttpb"
 	testpb "github.com/xizhibei/go-reverse-rpc/mqttpb/test"
+	"github.com/xizhibei/go-reverse-rpc/telemetry"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -38,6 +39,7 @@ type MQTTPBServerTestSuite struct {
 	mockCtrl         *gomock.Controller
 	mqttClient       *mock_mqttadapter.MockMQTTClientAdapter
 	originMqttClient *mock_mqtt.MockClient
+	testTelemetry    *telemetry.TestTelemetry
 
 	topicPrefix string
 	deviceId    string
@@ -55,6 +57,13 @@ func (suite *MQTTPBServerTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mqttClient = mock_mqttadapter.NewMockMQTTClientAdapter(suite.mockCtrl)
 	suite.originMqttClient = mock_mqtt.NewMockClient(suite.mockCtrl)
+	suite.testTelemetry = telemetry.NewTestTelemetry(suite.T())
+}
+
+func (suite *MQTTPBServerTestSuite) TearDownSuite() {
+	if err := suite.testTelemetry.Shutdown(context.Background()); err != nil {
+		suite.T().Errorf("Failed to shutdown telemetry: %v", err)
+	}
 }
 
 func (suite *MQTTPBServerTestSuite) TestReceiveCall() {
@@ -86,6 +95,15 @@ func (suite *MQTTPBServerTestSuite) TestReceiveCall() {
 		suite.topicPrefix,
 		suite.deviceId,
 	)
+
+	tel, err := telemetry.New(context.Background(), telemetry.Config{
+		ServiceName:    "test-service",
+		ServiceVersion: "v1.0.0",
+		Environment:    "test",
+	})
+	suite.Require().NoError(err)
+	suite.server.SetTelemetry(tel)
+	suite.NoError(err)
 
 	suite.mqttClient.EXPECT().
 		GetClientOptions().

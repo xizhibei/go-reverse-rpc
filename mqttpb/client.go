@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	rrpc "github.com/xizhibei/go-reverse-rpc"
 	"github.com/xizhibei/go-reverse-rpc/mqttadapter"
+	"github.com/xizhibei/go-reverse-rpc/telemetry"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
@@ -24,6 +26,7 @@ type Client struct {
 	mqttClient         mqttadapter.MQTTClientAdapter
 	log                *zap.SugaredLogger
 	rpcClientCodecPool sync.Pool
+	telemetry          *telemetry.Telemetry
 
 	topicPrefix string
 }
@@ -33,9 +36,12 @@ type Client struct {
 // and initializes the RPC client codec pool.
 // The returned pointer to the Client struct can be used to interact with the MQTT client.
 func NewClient(client mqttadapter.MQTTClientAdapter, topicPrefix string, encoding ContentEncoding) *Client {
+	tel, _ := telemetry.NewNoop()
+
 	s := Client{
 		mqttClient:  client,
 		topicPrefix: topicPrefix,
+		telemetry:   tel,
 		log:         zap.S().With("module", "rrpc.mqttpbclient"),
 		rpcClientCodecPool: sync.Pool{
 			New: func() interface{} {
@@ -82,7 +88,7 @@ func (s *Client) Subscribe(topic string, qos byte, cb mqttadapter.MessageCallbac
 	s.mqttClient.Subscribe(context.TODO(), topic, qos, cb)
 }
 
-func (s *Client) createRPCClient(deviceID string, encoding ContentEncoding) (*rpc.Client, func(), error) {
+func (s *Client) createRPCClient(ctx context.Context, deviceID string, encoding ContentEncoding) (*rpc.Client, func(), error) {
 	id := uuid.NewString()
 	requestTopic := path.Join(s.topicPrefix, deviceID, "request", id)
 	responseTopic := path.Join(s.topicPrefix, deviceID, "response", id)
@@ -94,6 +100,7 @@ func (s *Client) createRPCClient(deviceID string, encoding ContentEncoding) (*rp
 	codec := s.rpcClientCodecPool.Get().(*RPCClientCodec)
 	codec.Reset(conn)
 	codec.SetEncoding(encoding)
+	codec.SetContext(ctx)
 
 	rpcClient := rpc.NewClientWithCodec(codec)
 
@@ -133,7 +140,11 @@ func (s *Client) Call(ctx context.Context, deviceID, serviceMethod string, args 
 		o(&callOpt)
 	}
 
-	rpcClient, close, err := s.createRPCClient(deviceID, callOpt.encoding)
+	var span trace.Span
+	ctx, span = s.telemetry.StartSpan(ctx, "RRPC.Client.Call "+serviceMethod)
+	defer span.End()
+
+	rpcClient, close, err := s.createRPCClient(ctx, deviceID, callOpt.encoding)
 	if err != nil {
 		return err
 	}
@@ -147,4 +158,9 @@ func (s *Client) Call(ctx context.Context, deviceID, serviceMethod string, args 
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+// SetTelemetry sets the telemetry for the server
+func (s *Client) SetTelemetry(tel *telemetry.Telemetry) {
+	s.telemetry = tel
 }

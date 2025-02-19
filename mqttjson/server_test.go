@@ -18,6 +18,7 @@ import (
 	mock_mqttadapter "github.com/xizhibei/go-reverse-rpc/mqttadapter/mock"
 	mock_mqtt "github.com/xizhibei/go-reverse-rpc/mqttadapter/mock/mqtt"
 	"github.com/xizhibei/go-reverse-rpc/mqttjson"
+	"github.com/xizhibei/go-reverse-rpc/telemetry"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
@@ -41,6 +42,7 @@ type MQTTJsonServerTestSuite struct {
 	mockCtrl         *gomock.Controller
 	mqttClient       *mock_mqttadapter.MockMQTTClientAdapter
 	originMqttClient *mock_mqtt.MockClient
+	testTelemetry    *telemetry.TestTelemetry
 
 	topicPrefix string
 	deviceId    string
@@ -58,6 +60,13 @@ func (suite *MQTTJsonServerTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mqttClient = mock_mqttadapter.NewMockMQTTClientAdapter(suite.mockCtrl)
 	suite.originMqttClient = mock_mqtt.NewMockClient(suite.mockCtrl)
+	suite.testTelemetry = telemetry.NewTestTelemetry(suite.T())
+}
+
+func (suite *MQTTJsonServerTestSuite) TearDownSuite() {
+	if err := suite.testTelemetry.Shutdown(context.Background()); err != nil {
+		suite.T().Errorf("Failed to shutdown telemetry: %v", err)
+	}
 }
 
 func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
@@ -90,6 +99,14 @@ func (suite *MQTTJsonServerTestSuite) TestReceiveCall() {
 		suite.deviceId,
 		validator.New(),
 	)
+
+	tel, err := telemetry.New(context.Background(), telemetry.Config{
+		ServiceName:    "test-service",
+		ServiceVersion: "v1.0.0",
+		Environment:    "test",
+	})
+	suite.Require().NoError(err)
+	suite.server.SetTelemetry(tel)
 
 	suite.mqttClient.EXPECT().
 		GetClientOptions().

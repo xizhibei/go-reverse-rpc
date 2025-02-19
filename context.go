@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/atomic"
 )
 
@@ -46,6 +45,9 @@ type ChildContext interface {
 	// Method returns the name of the RPC method.
 	Method() string
 
+	// Ctx returns the underlying context.Context.
+	Ctx() context.Context
+
 	// Reply sends a response message.
 	// It returns true if the response was sent successfully, false otherwise.
 	Reply(res *Response) bool
@@ -55,17 +57,11 @@ type ChildContext interface {
 
 	// Bind binds the request data to the context.
 	Bind(request interface{}) error
-
-	// PrometheusLabels returns the Prometheus labels associated with the context.
-	PrometheusLabels() prometheus.Labels
 }
 
 // Context represents the context for reverse RPC.
 type Context interface {
 	ChildContext
-
-	// Ctx returns the underlying context.Context.
-	Ctx() context.Context
 
 	// GetResponse returns the response message.
 	GetResponse() *Response
@@ -81,18 +77,16 @@ type Context interface {
 
 // RequestContext is the context implement for reverse RPC.
 type RequestContext struct {
-	res      *Response       // res is the response object.
-	resMu    sync.Mutex      // resMu is a mutex to synchronize access to the response object.
-	replyed  atomic.Bool     // replyed is an atomic boolean flag indicating if a reply has been sent.
-	childCtx ChildContext    // childCtx is the underlying context instance.
-	ctx      context.Context // ctx is the underlying context.
+	res      *Response    // res is the response object.
+	resMu    sync.Mutex   // resMu is a mutex to synchronize access to the response object.
+	replyed  atomic.Bool  // replyed is an atomic boolean flag indicating if a reply has been sent.
+	childCtx ChildContext // childCtx is the underlying context instance.
 }
 
 // NewRequestContext creates a new instance of RequestContext with the given context and ContextInstance.
 // It returns a pointer to the newly created RequestContext.
-func NewRequestContext(ctx context.Context, childCtx ChildContext) *RequestContext {
+func NewRequestContext(childCtx ChildContext) *RequestContext {
 	return &RequestContext{
-		ctx:      ctx,
 		childCtx: childCtx,
 	}
 }
@@ -115,12 +109,6 @@ func (c *RequestContext) Bind(request interface{}) error {
 	return c.childCtx.Bind(request)
 }
 
-// PrometheusLabels returns the Prometheus labels associated with the context.
-// It retrieves the Prometheus labels from the underlying context instance.
-func (c *RequestContext) PrometheusLabels() prometheus.Labels {
-	return c.childCtx.PrometheusLabels()
-}
-
 // ReplyDesc returns the description of the reply message for the current context.
 func (c *RequestContext) ReplyDesc() string {
 	return c.childCtx.ReplyDesc()
@@ -129,10 +117,11 @@ func (c *RequestContext) ReplyDesc() string {
 // Ctx returns the context associated with the RequestContext.
 // If no context is set, it returns the background context.
 func (c *RequestContext) Ctx() context.Context {
-	if c.ctx == nil {
+	ctx := c.childCtx.Ctx()
+	if ctx == nil {
 		return context.Background()
 	}
-	return c.ctx
+	return ctx
 }
 
 // Reply sends a response to the client.

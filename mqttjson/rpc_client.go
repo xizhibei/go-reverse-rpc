@@ -1,6 +1,7 @@
 package mqttjson
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,12 +9,15 @@ import (
 	"sync"
 
 	rrpc "github.com/xizhibei/go-reverse-rpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 type rpcClientCodec struct {
 	dec *json.Decoder
 	enc *json.Encoder
 	c   io.ReadWriteCloser
+	ctx context.Context
 
 	req  Request
 	resp Response
@@ -30,6 +34,11 @@ func newClientCodec(conn io.ReadWriteCloser) rpc.ClientCodec {
 		c:       conn,
 		pending: make(map[uint64]string),
 	}
+}
+
+// SetContext sets the context for the rpcClientCodec.
+func (c *rpcClientCodec) SetContext(ctx context.Context) {
+	c.ctx = ctx
 }
 
 // WriteRequest writes a JSON-RPC request to the underlying connection.
@@ -50,6 +59,19 @@ func (c *rpcClientCodec) WriteRequest(r *rpc.Request, param interface{}) error {
 	c.req.Method = r.ServiceMethod
 	c.req.Params = json.RawMessage(paramsBytes)
 	c.req.ID = r.Seq
+
+	// Inject trace context into request metadata
+	if c.ctx != nil {
+		// Initialize metadata map if nil
+		if c.req.Metadata == nil {
+			c.req.Metadata = make(map[string]string)
+		}
+
+		propagator := otel.GetTextMapPropagator()
+		carrier := propagation.MapCarrier(c.req.Metadata)
+		propagator.Inject(c.ctx, carrier)
+	}
+
 	return c.enc.Encode(&c.req)
 }
 
@@ -64,6 +86,13 @@ func (c *rpcClientCodec) WriteRequest(r *rpc.Request, param interface{}) error {
 func (c *rpcClientCodec) ReadResponseHeader(r *rpc.Response) error {
 	if err := c.dec.Decode(&c.resp); err != nil {
 		return err
+	}
+
+	// Extract trace context from response metadata
+	if c.ctx != nil && c.resp.Metadata != nil {
+		propagator := otel.GetTextMapPropagator()
+		carrier := propagation.MapCarrier(c.resp.Metadata)
+		c.ctx = propagator.Extract(c.ctx, carrier)
 	}
 
 	c.mutex.Lock()
