@@ -1,11 +1,13 @@
 package mqttjson
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/prometheus/client_golang/prometheus"
 	rrpc "github.com/xizhibei/go-reverse-rpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // MQTTContext represents the context of an MQTT request.
@@ -13,17 +15,25 @@ type MQTTContext struct {
 	req       *RequestData
 	service   *Server
 	validator *validator.Validate
+	ctx       context.Context
 }
 
 // NewMQTTContext creates a new MQTTContext with the given request, service, and validator.
 // It returns a pointer to the created MQTTContext.
 func NewMQTTContext(req *RequestData, service *Server, validator *validator.Validate) *MQTTContext {
-	ctx := MQTTContext{
+	ctx := context.Background()
+	if req.Request.Metadata != nil {
+		// Extract trace context using OpenTelemetry propagator
+		propagator := otel.GetTextMapPropagator()
+		carrier := propagation.MapCarrier(req.Request.Metadata)
+		ctx = propagator.Extract(ctx, carrier)
+	}
+	return &MQTTContext{
 		req:       req,
 		service:   service,
 		validator: validator,
+		ctx:       ctx,
 	}
-	return &ctx
 }
 
 // ID returns the ID of the MQTTContext.
@@ -42,15 +52,9 @@ func (c *MQTTContext) Method() string {
 	return c.req.Method
 }
 
-// PrometheusLabels returns the Prometheus labels for the MQTTContext.
-// It includes the method and host labels.
-func (c *MQTTContext) PrometheusLabels() prometheus.Labels {
-	r := c.service.iotClient.GetClientOptions()
-	uri := r.Servers[0]
-	return prometheus.Labels{
-		"method": c.req.Method,
-		"host":   uri.Host,
-	}
+// Ctx returns the context of the MQTTContext.
+func (c *MQTTContext) Ctx() context.Context {
+	return c.ctx
 }
 
 // Bind unmarshals the JSON-encoded request parameters into the provided request object

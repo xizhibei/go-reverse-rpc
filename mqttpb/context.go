@@ -1,11 +1,13 @@
 package mqttpb
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/cockroachdb/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	rrpc "github.com/xizhibei/go-reverse-rpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -19,16 +21,24 @@ var (
 type MQTTContext struct {
 	req *RequestData
 	svc *Server
+	ctx context.Context
 }
 
 // NewMQTTContext creates a new MQTTContext instance.
 func NewMQTTContext(req *RequestData, svc *Server) *MQTTContext {
-	ctx := MQTTContext{
-		req: req,
-		svc: svc,
+	ctx := context.Background()
+	if req.Request.Metadata != nil {
+		// Extract trace context using OpenTelemetry propagator
+		propagator := otel.GetTextMapPropagator()
+		carrier := propagation.MapCarrier(req.Request.Metadata)
+		ctx = propagator.Extract(ctx, carrier)
 	}
 
-	return &ctx
+	return &MQTTContext{
+		req: req,
+		svc: svc,
+		ctx: ctx,
+	}
 }
 
 // ID returns the ID of the MQTTContext.
@@ -46,6 +56,11 @@ func (c *MQTTContext) Metadata() map[string]string {
 	return c.req.Metadata
 }
 
+// Ctx returns the context of the MQTTContext.
+func (c *MQTTContext) Ctx() context.Context {
+	return c.ctx
+}
+
 // MetadataGetter is an interface for getting metadata.
 type MetadataGetter interface {
 	Metadata() map[string]string
@@ -59,16 +74,6 @@ func (c *MQTTContext) Encoding() ContentEncoding {
 // EncodingGetter is an interface for getting the content encoding.
 type EncodingGetter interface {
 	Encoding() ContentEncoding
-}
-
-// PrometheusLabels returns the Prometheus labels of the MQTTContext.
-func (c *MQTTContext) PrometheusLabels() prometheus.Labels {
-	r := c.svc.iotClient.GetClientOptions()
-	uri := r.Servers[0]
-	return prometheus.Labels{
-		"method": c.req.Method,
-		"host":   uri.Host,
-	}
 }
 
 // ReplyDesc returns the reply description of the MQTTContext.

@@ -11,6 +11,8 @@ import (
 	"github.com/Jeffail/tunny"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/xizhibei/go-reverse-rpc/telemetry"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/time/rate"
@@ -36,9 +38,10 @@ type Server struct {
 	cbList       []OnAfterResponseCallback // List of callbacks to be executed after each response.
 	afterResPool sync.Pool                 // Pool of resources for after-response processing.
 
-	options    *serverOptions // Options for server configuration.
-	workerPool *tunny.Pool    // Pool of worker goroutines for request processing.
-	limiter    *rate.Limiter  // Rate limiter for controlling request rate.
+	options    *serverOptions      // Options for server configuration.
+	workerPool *tunny.Pool         // Pool of worker goroutines for request processing.
+	limiter    *rate.Limiter       // Rate limiter for controlling request rate.
+	telemetry  telemetry.Telemetry // OpenTelemetry components
 }
 
 // NewServer creates a new instance of the Server struct with the provided options.
@@ -61,6 +64,8 @@ func NewServer(options ...ServerOption) *Server {
 	rt := rate.Every(o.limiterDuration)
 	limiter := rate.NewLimiter(rt, o.limiterCount)
 
+	tel, _ := telemetry.NewNoop()
+
 	server := Server{
 		log:        zap.S().With("module", "rrpc.server"),
 		handlerMap: make(map[string]*Handler),
@@ -73,6 +78,7 @@ func NewServer(options ...ServerOption) *Server {
 		},
 		workerPool: tunny.NewCallback(o.workerNum),
 		limiter:    limiter,
+		telemetry:  tel,
 	}
 
 	return &server
@@ -98,12 +104,17 @@ func (s *Server) Register(method string, hdl *Handler) {
 // It measures the duration of the call, logs the response if enabled, and emits an event after the response.
 // If the call exceeds the timeout or encounters an error, it replies with an appropriate error message.
 func (s *Server) Call(c Context) {
+	ctx := c.Ctx()
+
+	var span trace.Span
+	ctx, span = s.telemetry.StartSpan(ctx, "RRPC.Server.Call "+c.Method())
+	defer span.End()
+
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start).Round(time.Millisecond)
 
 		evt := s.afterResPool.Get().(*AfterResponseEvent)
-		evt.Labels = c.PrometheusLabels()
 		evt.Duration = duration
 		evt.Res = c.GetResponse()
 
@@ -115,6 +126,12 @@ func (s *Server) Call(c Context) {
 
 			s.log.Infof("Response to %s [%d] (%v)", c.ReplyDesc(), status, duration)
 		}
+
+		status := "0"
+		if evt.Res != nil {
+			status = strconv.FormatInt(int64(evt.Res.Status), 10)
+		}
+		s.telemetry.RecordRequest(ctx, duration, c.Method(), status, evt.Res.Error)
 
 		s.emitAfterResponse(evt)
 	}()
@@ -163,7 +180,6 @@ func (s *Server) Call(c Context) {
 
 // AfterResponseEvent represents an event that is emitted after a response is sent.
 type AfterResponseEvent struct {
-	Labels   prometheus.Labels
 	Duration time.Duration
 	Res      *Response
 }
@@ -187,6 +203,7 @@ func (s *Server) emitAfterResponse(e *AfterResponseEvent) {
 	s.afterResPool.Put(e)
 }
 
+// @Deprecated use OpenTelemetry instead
 // RegisterMetrics registers metrics for monitoring the server's response time and error count.
 // It takes two parameters: responseTime, a Prometheus HistogramVec for tracking response time,
 // and errorCount, a Prometheus GaugeVec for counting errors.
@@ -202,7 +219,7 @@ func (s *Server) RegisterMetrics(responseTime *prometheus.HistogramVec, errorCou
 			status = strconv.FormatInt(int64(e.Res.Status), 10)
 		}
 
-		labels := e.Labels
+		labels := prometheus.Labels{}
 		labels["name"] = s.options.name
 		labels["status"] = status
 
@@ -219,4 +236,9 @@ func (s *Server) RegisterMetrics(responseTime *prometheus.HistogramVec, errorCou
 				Inc()
 		}
 	})
+}
+
+// SetTelemetry sets the telemetry for the server
+func (s *Server) SetTelemetry(tel telemetry.Telemetry) {
+	s.telemetry = tel
 }

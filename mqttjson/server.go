@@ -151,7 +151,7 @@ func (s *Server) initReceive() error {
 		s.log.Debugf("Request from topic %s, method %s", m.Topic(), req.Method)
 
 		mqttCtx := NewMQTTContext(&req, s, s.validator)
-		c := rrpc.NewRequestContext(context.Background(), mqttCtx)
+		c := rrpc.NewRequestContext(mqttCtx)
 
 		s.Server.Call(c)
 	})
