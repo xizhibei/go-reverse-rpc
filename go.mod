@@ -1,8 +1,6 @@
 module github.com/xizhibei/go-reverse-rpc
 
-go 1.22.0
-
-toolchain go1.22.3
+go 1.23.0
 
 require (
 	github.com/Jeffail/tunny v0.1.4
@@ -13,15 +11,15 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
-	go.opentelemetry.io/otel v1.34.0
+	go.opentelemetry.io/otel v1.36.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.34.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.34.0
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.34.0
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.34.0
-	go.opentelemetry.io/otel/metric v1.34.0
+	go.opentelemetry.io/otel/metric v1.36.0
 	go.opentelemetry.io/otel/sdk v1.34.0
 	go.opentelemetry.io/otel/sdk/metric v1.34.0
-	go.opentelemetry.io/otel/trace v1.34.0
+	go.opentelemetry.io/otel/trace v1.36.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/mock v0.4.0
 	go.uber.org/zap v1.27.0
