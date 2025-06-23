@@ -32,8 +32,9 @@ This architecture is ideal for:
   - JSON and Protobuf (implemented)
   - MessagePack, Avro (planned)
 - **Observability**
-  - Prometheus metrics
-  - OpenTelemetry integration
+  - OpenTelemetry integration (tracing and metrics)
+  - Configurable telemetry export (OTLP, debug mode)
+  - Built-in RPC performance metrics
 - **Reliability**
   - Structured error handling
   - Request rate limiting
@@ -117,7 +118,49 @@ var res Req
 err := client.Call(context.Background(), "device-123456", "example-method", &reqParams, &res)
 ```
 
-## Configuration Options
+## Telemetry Configuration
+
+The framework includes comprehensive OpenTelemetry support with both programmatic and environment-based configuration.
+
+### Environment Variables
+
+```bash
+# Enable/disable telemetry (default: false)
+export OTEL_ENABLED=true
+
+# Enable debug mode with stdout output (default: false)  
+export OTEL_DEBUG=true
+
+# OTLP collector endpoint (default: localhost:4317)
+export OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
+
+# Deployment environment (default: development)
+export ENVIRONMENT=production
+```
+
+### Programmatic Configuration
+
+```go
+import "github.com/xizhibei/go-reverse-rpc/telemetry"
+
+tel, err := telemetry.New(telemetry.Config{
+    ServiceName:    "my-service",
+    ServiceVersion: "1.0.0", 
+    Environment:    "production",
+    OTLPEndpoint:   "localhost:4317",
+    Debug:          false,
+    Enabled:        true,
+})
+if err != nil {
+    // Handle error
+}
+defer tel.Shutdown(context.Background())
+
+// Configure server with telemetry
+server.SetTelemetry(tel)
+```
+
+## Server Configuration Options
 
 ```go
 // Server configuration options
@@ -136,29 +179,21 @@ The project includes comprehensive examples to help you get started:
 ### Basic Client/Server Demo
 
 Located in `examples/basic/`, this example demonstrates:
-- Simple server with math operations
+- Simple server with math operations (Add, Multiply, Divide)
 - Client implementation making RPC calls
 - Error handling and timeout management
-- Telemetry integration
+- OpenTelemetry integration with metrics and tracing
 
 ```bash
 # Start the server
-go run examples/basic/server.go
+go run examples/basic/server/main.go
 
 # In another terminal, run the client
-go run examples/basic/client.go
+go run examples/basic/client/main.go
 ```
 
-## Configuration Options
+The example includes both manual telemetry configuration and environment-based configuration patterns. Check `examples/basic/server-with-env/main.go` for environment variable usage.
 
-```go
-rrpc.WithServerName(name string) // Used to set the name of the server. For monitoring purposes, metrics labels will use this name.
-rrpc.WithLogResponse(logResponse bool) // Used to enable or disable logging of response.
-rrpc.WithLimiter(d time.Duration, count int) // Used to set the limiter duration and count for the server.
-rrpc.WithLimiterReject() // Used to allow the server to reject requests when the limiter is full. This is default behavior.
-rrpc.WithLimiterWait() // Used to allow the server to wait for available resources instead of rejecting requests when the limiter is full.
-rrpc.WithWorkerNum(count int) // Used to set the number of workers for the server.
-```
 
 ## License
 
