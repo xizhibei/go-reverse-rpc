@@ -23,14 +23,22 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// Telemetry defines the interface for telemetry operations
+type Telemetry interface {
+	StartSpan(ctx context.Context, name string, opts ...trace.SpanStartOption) (context.Context, trace.Span)
+	RecordRequest(ctx context.Context, duration time.Duration, method string, status string, err error)
+	Shutdown(ctx context.Context) error
+}
+
 // Telemetry holds OpenTelemetry components
-type Telemetry struct {
+type TelemetryImpl struct {
 	tp              *sdktrace.TracerProvider
 	mp              *sdkmetric.MeterProvider
 	tracer          trace.Tracer
 	meter           metric.Meter
 	requestDuration metric.Float64Histogram
 	errorCounter    metric.Int64Counter
+	enabled         bool
 }
 
 // Config holds configuration for telemetry setup
@@ -43,10 +51,14 @@ type Config struct {
 	TraceWriter  io.Writer
 	MetricWriter io.Writer
 	Debug        bool
+	Enabled      bool
 }
 
 // New creates a new Telemetry instance
-func New(ctx context.Context, cfg Config) (*Telemetry, error) {
+func New(ctx context.Context, cfg Config) (*TelemetryImpl, error) {
+	if !cfg.Enabled {
+		return NewNoop()
+	}
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			semconv.ServiceName(cfg.ServiceName),
@@ -158,18 +170,19 @@ func New(ctx context.Context, cfg Config) (*Telemetry, error) {
 
 	tracer := tp.Tracer("github.com/xizhibei/go-reverse-rpc")
 
-	return &Telemetry{
+	return &TelemetryImpl{
 		tp:              tp,
 		mp:              mp,
 		tracer:          tracer,
 		meter:           meter,
 		requestDuration: requestDuration,
 		errorCounter:    errorCounter,
+		enabled:         true,
 	}, nil
 }
 
 // Shutdown gracefully shuts down the telemetry providers
-func (t *Telemetry) Shutdown(ctx context.Context) error {
+func (t *TelemetryImpl) Shutdown(ctx context.Context) error {
 	if err := t.tp.Shutdown(ctx); err != nil {
 		return fmt.Errorf("failed to shutdown trace provider: %w", err)
 	}
@@ -180,7 +193,10 @@ func (t *Telemetry) Shutdown(ctx context.Context) error {
 }
 
 // RecordRequest records request duration and optionally increments error counter
-func (t *Telemetry) RecordRequest(ctx context.Context, duration time.Duration, method string, status string, err error) {
+func (t *TelemetryImpl) RecordRequest(ctx context.Context, duration time.Duration, method string, status string, err error) {
+	if !t.enabled {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("method", method),
 		attribute.String("status", status),
@@ -195,14 +211,18 @@ func (t *Telemetry) RecordRequest(ctx context.Context, duration time.Duration, m
 }
 
 // StartSpan starts a new span and returns the context and span
-func (t *Telemetry) StartSpan(ctx context.Context, name string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+func (t *TelemetryImpl) StartSpan(ctx context.Context, name string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+	if !t.enabled {
+		// Return a no-op span when disabled
+		return ctx, trace.SpanFromContext(ctx)
+	}
 	return t.tracer.Start(ctx, name, opts...)
 }
 
 // NewNoop creates a new Telemetry instance that does nothing.
 // It provides a placeholder implementation that satisfies the interface
 // but performs no actual telemetry operations.
-func NewNoop() (*Telemetry, error) {
+func NewNoop() (*TelemetryImpl, error) {
 	// Create empty resource
 	res, err := resource.New(context.Background(),
 		resource.WithAttributes(
@@ -246,12 +266,39 @@ func NewNoop() (*Telemetry, error) {
 		return nil, fmt.Errorf("failed to create error counter: %w", err)
 	}
 
-	return &Telemetry{
+	return &TelemetryImpl{
 		tp:              tp,
 		mp:              mp,
 		tracer:          tracer,
 		meter:           meter,
 		requestDuration: requestDuration,
 		errorCounter:    errorCounter,
+		enabled:         false,
 	}, nil
+}
+
+// NewFromEnv creates a telemetry instance from environment variables
+func NewFromEnv(ctx context.Context, serviceName, serviceVersion string) (*TelemetryImpl, error) {
+	cfg := Config{
+		ServiceName:    serviceName,
+		ServiceVersion: serviceVersion,
+		Environment:    getEnvOrDefault("ENVIRONMENT", "development"),
+		OTLPEndpoint:   getEnvOrDefault("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317"),
+		Enabled:        getEnvOrDefault("OTEL_ENABLED", "false") == "true",
+		Debug:          getEnvOrDefault("OTEL_DEBUG", "false") == "true",
+	}
+
+	return New(ctx, cfg)
+}
+
+// IsEnabled returns whether telemetry is enabled
+func (t *TelemetryImpl) IsEnabled() bool {
+	return t.enabled
+}
+
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

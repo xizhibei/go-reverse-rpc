@@ -20,7 +20,7 @@ import (
 
 func main() {
 	brokerURL := flag.String("broker", "tcp://localhost:1883", "MQTT broker URL")
-	clientID := flag.String("client-id", "math-server", "MQTT client ID")
+	clientID := flag.String("client-id", "math-server-env", "MQTT client ID")
 	flag.Parse()
 
 	logger, _ := zap.NewDevelopment()
@@ -44,33 +44,22 @@ func main() {
 	)
 	log.Infof("Server connected to mqtt broker %s", *brokerURL)
 
-	traceFile, err := os.OpenFile("server-trace.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatalf("Failed to open trace file: %v", err)
-	}
-	defer traceFile.Close()
-
-	metricFile, err := os.OpenFile("server-metric.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatalf("Failed to open metric file: %v", err)
-	}
-	defer metricFile.Close()
-
-	// Initialize telemetry (now optional via environment variables)
-	tel, err := telemetry.New(context.Background(), telemetry.Config{
-		ServiceName:    "math-server",
-		ServiceVersion: "1.0.0",
-		Environment:    "development",
-		Debug:          true,
-		Enabled:        true, // Enable by default for demo
-		TraceWriter:    traceFile,
-		MetricWriter:   metricFile,
-	})
+	// Initialize telemetry from environment variables
+	// Set OTEL_ENABLED=true to enable telemetry
+	// Set OTEL_DEBUG=true for debug output
+	tel, err := telemetry.NewFromEnv(context.Background(), "math-server", "1.0.0")
 	if err != nil {
 		log.Warnf("Failed to initialize telemetry: %v", err)
-		// Use no-op telemetry as fallback
+		// Fallback to no-op telemetry
 		tel, _ = telemetry.NewNoop()
 	}
+	
+	if tel.IsEnabled() {
+		log.Infof("Telemetry enabled")
+	} else {
+		log.Infof("Telemetry disabled (set OTEL_ENABLED=true to enable)")
+	}
+	
 	server.SetTelemetry(tel)
 
 	// Register math operations
@@ -87,6 +76,16 @@ func main() {
 	go func() {
 		sig := <-sigChan
 		log.Infof("Received signal %v, shutting down...", sig)
+		
+		// Gracefully shutdown telemetry
+		if tel.IsEnabled() {
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer shutdownCancel()
+			if err := tel.Shutdown(shutdownCtx); err != nil {
+				log.Errorf("Error shutting down telemetry: %v", err)
+			}
+		}
+		
 		cancel()
 	}()
 

@@ -53,17 +53,20 @@ func main() {
 	}
 	defer metricFile.Close()
 
-	// Initialize telemetry
+	// Initialize telemetry (now optional via environment variables)
 	tel, err := telemetry.New(context.Background(), telemetry.Config{
 		ServiceName:    "math-client",
 		ServiceVersion: "1.0.0",
 		Environment:    "development",
 		Debug:          true,
+		Enabled:        true, // Enable by default for demo
 		TraceWriter:    traceFile,
 		MetricWriter:   metricFile,
 	})
 	if err != nil {
-		log.Infof("Warning: Failed to initialize telemetry: %v", err)
+		log.Warnf("Failed to initialize telemetry: %v", err)
+		// Use no-op telemetry as fallback
+		tel, _ = telemetry.NewNoop()
 	}
 	client.SetTelemetry(tel)
 

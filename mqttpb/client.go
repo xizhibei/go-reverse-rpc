@@ -26,7 +26,7 @@ type Client struct {
 	mqttClient         mqttadapter.MQTTClientAdapter
 	log                *zap.SugaredLogger
 	rpcClientCodecPool sync.Pool
-	telemetry          *telemetry.Telemetry
+	telemetry          telemetry.Telemetry
 
 	topicPrefix string
 }
@@ -161,6 +161,6 @@ func (s *Client) Call(ctx context.Context, deviceID, serviceMethod string, args 
 }
 
 // SetTelemetry sets the telemetry for the server
-func (s *Client) SetTelemetry(tel *telemetry.Telemetry) {
+func (s *Client) SetTelemetry(tel telemetry.Telemetry) {
 	s.telemetry = tel
 }

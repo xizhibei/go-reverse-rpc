@@ -38,10 +38,10 @@ type Server struct {
 	cbList       []OnAfterResponseCallback // List of callbacks to be executed after each response.
 	afterResPool sync.Pool                 // Pool of resources for after-response processing.
 
-	options    *serverOptions       // Options for server configuration.
-	workerPool *tunny.Pool          // Pool of worker goroutines for request processing.
-	limiter    *rate.Limiter        // Rate limiter for controlling request rate.
-	telemetry  *telemetry.Telemetry // OpenTelemetry components
+	options    *serverOptions      // Options for server configuration.
+	workerPool *tunny.Pool         // Pool of worker goroutines for request processing.
+	limiter    *rate.Limiter       // Rate limiter for controlling request rate.
+	telemetry  telemetry.Telemetry // OpenTelemetry components
 }
 
 // NewServer creates a new instance of the Server struct with the provided options.
@@ -239,6 +239,6 @@ func (s *Server) RegisterMetrics(responseTime *prometheus.HistogramVec, errorCou
 }
 
 // SetTelemetry sets the telemetry for the server
-func (s *Server) SetTelemetry(tel *telemetry.Telemetry) {
+func (s *Server) SetTelemetry(tel telemetry.Telemetry) {
 	s.telemetry = tel
 }
