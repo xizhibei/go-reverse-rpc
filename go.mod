@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/Jeffail/tunny v0.1.4
 	github.com/andybalholm/brotli v1.1.1
-	github.com/cockroachdb/errors v1.11.3
+	github.com/cockroachdb/errors v1.12.0
 	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/google/uuid v1.6.0
